@@ -13,6 +13,7 @@ struct EnvironmentTabBar: View {
     let kinds: [EnvKind]
     let counts: [EnvKind: Int]
     @Binding var selection: EnvKind?
+    @Environment(\.environmentCatalog) private var catalog
 
     var body: some View {
         HStack(spacing: 6) {
@@ -22,8 +23,8 @@ struct EnvironmentTabBar: View {
                     selection = kind
                 } label: {
                     HStack(spacing: 6) {
-                        Circle().fill(kind.tint).frame(width: 7, height: 7)
-                        Text(kind.title)
+                        Circle().fill(catalog.tint(for: kind)).frame(width: 7, height: 7)
+                        Text(catalog.title(for: kind))
                             .fontWeight(isSelected ? .semibold : .regular)
                         if let count = counts[kind] {
                             Text("\(count)")
@@ -46,5 +47,6 @@ struct EnvironmentTabBar: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
+        .background(.bar)
     }
 }

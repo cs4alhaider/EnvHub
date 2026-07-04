@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import Core
 
 struct NewEnvFileSheet: View {
@@ -92,10 +93,12 @@ struct NewEnvFileSheet: View {
     /// Whether the typed name classifies (under the user's own rules) as a kind that's
     /// meant to be committed — e.g. `.env.example` — so gitignoring it would be wrong.
     private func isSafeToTrack(_ filename: String) -> Bool {
-        ProjectLoader.classify(
+        let settings = EnvHubStore.settings(in: context)
+        let kind = ProjectLoader.classify(
             fileName: filename.trimmingCharacters(in: .whitespaces),
-            rules: EnvHubStore.settings(in: context).classificationRules
-        ).isSafeToTrack
+            rules: settings.classificationRules
+        )
+        return settings.environmentCatalog.isSafeToTrack(kind)
     }
 
     private func setPreset(_ preset: String) {

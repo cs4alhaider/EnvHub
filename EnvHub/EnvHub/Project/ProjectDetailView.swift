@@ -13,6 +13,7 @@ import Core
 struct ProjectDetailView: View {
     let project: ProjectRecord
     @Environment(\.modelContext) private var context
+    @Environment(\.environmentCatalog) private var catalog
 
     @State private var classified: [EnvFile] = []
     @State private var selectedFile: URL?
@@ -41,7 +42,7 @@ struct ProjectDetailView: View {
 
             // Example/template files are *meant* to be committed — no warning for them.
             if let url = selectedFile,
-               currentEnvFile?.kind.isSafeToTrack != true,
+               !(currentEnvFile.map { catalog.isSafeToTrack($0.kind) } ?? false),
                metadata.gitInfo.status(for: url)?.isTracked == true {
                 GitTrackingBanner(fileURL: url) { unstageAndIgnore(url) }
             }
@@ -132,7 +133,7 @@ struct ProjectDetailView: View {
     // MARK: Derived
 
     private var kinds: [EnvKind] {
-        Array(Set(classified.map(\.kind))).sorted { $0.sortOrder < $1.sortOrder }
+        catalog.sorted(Set(classified.map(\.kind)))
     }
 
     private var kindCounts: [EnvKind: Int] {

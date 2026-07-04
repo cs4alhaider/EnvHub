@@ -100,6 +100,7 @@ struct EnvFileEditor: View {
                 .buttonStyle(.borderedProminent)
         }
         .padding(8)
+        .background(.bar)
     }
 
     // MARK: Raw developer view

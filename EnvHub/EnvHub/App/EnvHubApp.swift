@@ -29,6 +29,27 @@ struct EnvHubApp: App {
                 .environment(\.cryptoService, CryptoService())
         }
         .modelContainer(container)
+        .defaultSize(width: 1180, height: 760)
+        // Keyboard shortcuts live in the menu bar (not on toolbar buttons), so they
+        // work regardless of the sidebar/toolbar state.
+        .commands { AppCommands() }
+
+        // One window per project, keyed by ID (double-click a sidebar row or use
+        // "Open in New Window"). Re-opening the same project focuses its window.
+        WindowGroup("Project", id: "project", for: UUID.self) { $projectID in
+            ProjectWindowView(projectID: projectID)
+                .environment(\.scanService, ScanService())
+                .environment(\.cryptoService, CryptoService())
+        }
+        .modelContainer(container)
+        .defaultSize(width: 960, height: 680)
+
+        // Custom "About EnvHub" window (App menu → About), richer than the stock panel.
+        Window("About EnvHub", id: "about") {
+            AboutWindowView()
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
 
         Settings {
             SettingsView()

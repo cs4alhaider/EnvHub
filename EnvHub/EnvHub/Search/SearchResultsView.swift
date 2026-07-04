@@ -14,6 +14,7 @@ struct SearchResultsView: View {
     let hits: [IndexedVariable]
     let onSelect: (UUID, URL) -> Void
 
+    @Environment(\.environmentCatalog) private var catalog
     @State private var reveal = false
 
     var body: some View {
@@ -62,7 +63,7 @@ struct SearchResultsView: View {
 
     private func row(_ hit: IndexedVariable) -> some View {
         HStack(spacing: 8) {
-            Circle().fill(hit.kind.tint).frame(width: 7, height: 7)
+            Circle().fill(catalog.tint(for: hit.kind)).frame(width: 7, height: 7)
             Text(hit.key).monospaced().fontWeight(.medium)
             Text("=").foregroundStyle(.tertiary)
             Text(reveal ? hit.value : ValueMasking.masked(hit.value, maxDots: 16))

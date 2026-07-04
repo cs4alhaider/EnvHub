@@ -11,6 +11,7 @@ import Core
 struct DiffView: View {
     let files: [EnvFile]
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.environmentCatalog) private var catalog
 
     @State private var leftURL: URL?
     @State private var rightURL: URL?
@@ -48,7 +49,7 @@ struct DiffView: View {
     private func filePicker(_ label: String, selection: Binding<URL?>) -> some View {
         Picker(label, selection: selection) {
             ForEach(files) { file in
-                Text("\(file.kind.title) · \(file.fileName)").tag(Optional(file.path))
+                Text("\(catalog.title(for: file.kind)) · \(file.fileName)").tag(Optional(file.path))
             }
         }
         .frame(maxWidth: 260)

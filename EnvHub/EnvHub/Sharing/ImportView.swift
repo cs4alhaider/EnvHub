@@ -66,11 +66,19 @@ struct ImportView: View {
 
     private func contents(_ export: EnvExport) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("\(export.type == .project ? "Project" : "File"): \(export.name)")
+            Text("\(typeLabel(export.type)): \(export.name)")
                 .font(.subheadline)
-            ForEach(export.files, id: \.name) { file in
-                Label("\(file.name) · \(file.variables.count) variable\(file.variables.count == 1 ? "" : "s")", systemImage: "doc.text")
-                    .monospaced().font(.caption)
+            // Library exports can hold hundreds of files — show a preview, not all.
+            ForEach(Array(export.files.prefix(8).enumerated()), id: \.offset) { _, file in
+                Label(
+                    "\(file.project.map { $0 + "/" } ?? "")\(file.name) · \(file.variables.count) variable\(file.variables.count == 1 ? "" : "s")",
+                    systemImage: "doc.text"
+                )
+                .monospaced().font(.caption)
+            }
+            if export.files.count > 8 {
+                Text("…and \(export.files.count - 8) more file\(export.files.count - 8 == 1 ? "" : "s")")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Divider()
             HStack {
@@ -89,6 +97,14 @@ struct ImportView: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(destination == nil)
             }
+        }
+    }
+
+    private func typeLabel(_ type: EnvExport.Kind) -> String {
+        switch type {
+        case .single: "File"
+        case .project: "Project"
+        case .library: "Library"
         }
     }
 
