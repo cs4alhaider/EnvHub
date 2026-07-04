@@ -15,6 +15,8 @@ extension EnvKind {
         case .development: .green
         case .staging: .orange
         case .production: .red
+        case .local: .blue
+        case .example: .purple
         case .other: .gray
         }
     }

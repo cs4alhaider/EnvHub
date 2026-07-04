@@ -17,10 +17,7 @@ struct ProjectDetailView: View {
     @State private var classified: [EnvFile] = []
     @State private var selectedFile: URL?
     @State private var editor: EnvFileEditorModel?
-
-    @State private var fileVarCounts: [URL: Int] = [:]
-    @State private var gitInfo: GitInfo?
-    @State private var gitignored: [String: Bool] = [:]
+    @State private var metadata = ProjectMetadata.empty
 
     // Sheets / confirmation
     @State private var pendingFile: URL?
@@ -42,7 +39,12 @@ struct ProjectDetailView: View {
                 Divider()
             }
 
-            gitBanner
+            // Example/template files are *meant* to be committed — no warning for them.
+            if let url = selectedFile,
+               currentEnvFile?.kind.isSafeToTrack != true,
+               metadata.gitInfo.status(for: url)?.isTracked == true {
+                GitTrackingBanner(fileURL: url) { unstageAndIgnore(url) }
+            }
 
             if let editor {
                 EnvFileEditor(model: editor)
@@ -66,10 +68,10 @@ struct ProjectDetailView: View {
         }
         .sheet(isPresented: $showNewFile) {
             NewEnvFileSheet(projectFolder: project.url, existingFiles: classified) { url in
-                reload(select: url)
+                Task { await reload(select: url) }
             }
         }
-        .task(id: project.path) { loadFiles() }
+        .task(id: project.path) { await reload(select: nil) }
         .confirmationDialog(
             "You have unsaved changes",
             isPresented: $confirmSwitch,
@@ -92,9 +94,9 @@ struct ProjectDetailView: View {
                 Button("Reveal in Finder", systemImage: "magnifyingglass") { FinderActions.reveal(project.url) }
                 Button("Open in Finder", systemImage: "folder") { FinderActions.open(project.url) }
                 Button("Copy Path", systemImage: "doc.on.doc") { FinderActions.copyPath(project.url) }
-                if let url = selectedFile, gitInfo?.isRepo == true {
+                if let url = selectedFile, metadata.gitInfo.isRepo {
                     Divider()
-                    if gitignored[url.lastPathComponent] == true {
+                    if metadata.gitignoredFileNames.contains(url.lastPathComponent) {
                         Button("Remove \(url.lastPathComponent) from .gitignore", systemImage: "eye") {
                             toggleGitignore(url, add: false)
                         }
@@ -127,28 +129,6 @@ struct ProjectDetailView: View {
         }
     }
 
-    // MARK: Git banner
-
-    @ViewBuilder
-    private var gitBanner: some View {
-        if let url = selectedFile, let status = gitInfo?.status(for: url), status.isTracked {
-            HStack(spacing: 10) {
-                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("\(url.lastPathComponent) is tracked by git").fontWeight(.medium)
-                    Text("Secrets here could be committed. Unstage it and add it to .gitignore.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Button("Unstage & Ignore") { unstageAndIgnore(url) }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.orange)
-            }
-            .padding(10)
-            .background(.orange.opacity(0.12))
-        }
-    }
-
     // MARK: Derived
 
     private var kinds: [EnvKind] {
@@ -157,7 +137,9 @@ struct ProjectDetailView: View {
 
     private var kindCounts: [EnvKind: Int] {
         var counts: [EnvKind: Int] = [:]
-        for file in classified { counts[file.kind, default: 0] += fileVarCounts[file.path] ?? 0 }
+        for file in classified {
+            counts[file.kind, default: 0] += metadata.variableCounts[file.path] ?? 0
+        }
         return counts
     }
 
@@ -181,7 +163,7 @@ struct ProjectDetailView: View {
     private func filePicker(for kind: EnvKind) -> some View {
         Picker("File", selection: Binding(get: { selectedFile }, set: { requestSwitch(to: $0) })) {
             ForEach(filesForKind(kind), id: \.self) { url in
-                Text("\(url.lastPathComponent) (\(fileVarCounts[url] ?? 0))").tag(Optional(url))
+                Text("\(url.lastPathComponent) (\(metadata.variableCounts[url] ?? 0))").tag(Optional(url))
             }
         }
         .pickerStyle(.segmented)
@@ -191,33 +173,23 @@ struct ProjectDetailView: View {
 
     // MARK: Actions
 
-    private func loadFiles() { reload(select: nil) }
-
-    private func reload(select url: URL?) {
+    /// Re-list + classify the folder's env files, open an editor on `url` (or the first
+    /// file in tab order), then refresh metadata off the main actor.
+    private func reload(select url: URL?) async {
         let settings = EnvHubStore.settings(in: context)
-        classified = ProjectLoader.envFiles(in: project.url, rules: settings.classificationRules, patterns: settings.filenamePatterns)
+        classified = ProjectLoader.envFiles(
+            in: project.url,
+            rules: settings.classificationRules,
+            patterns: settings.filenamePatterns
+        )
         let target = url ?? kinds.first.flatMap { filesForKind($0).first } ?? classified.first?.path
         selectedFile = target
         openEditor(for: target)
-        Task { await refreshMetadata() }
+        await refreshMetadata()
     }
 
     private func refreshMetadata() async {
-        let files = classified.map(\.path)
-        let folder = project.url
-        let result = await Task.detached(priority: .utility) { () -> ([URL: Int], GitInfo, [String: Bool]) in
-            var counts: [URL: Int] = [:]
-            for file in files { counts[file] = (try? EnvFileService.load(file))?.variables.count ?? 0 }
-            let info = GitService.info(folder: folder, files: files)
-            var ignored: [String: Bool] = [:]
-            if info.isRepo {
-                for file in files { ignored[file.lastPathComponent] = GitService.isInGitignore(file.lastPathComponent, folder: folder) }
-            }
-            return (counts, info, ignored)
-        }.value
-        fileVarCounts = result.0
-        gitInfo = result.1
-        gitignored = result.2
+        metadata = await ProjectMetadata.load(folder: project.url, files: classified.map(\.path))
     }
 
     private func openEditor(for url: URL?) {
@@ -246,16 +218,20 @@ struct ProjectDetailView: View {
     }
 
     private func unstageAndIgnore(_ url: URL) {
-        try? GitService.unstageAndIgnore(url, in: project.url)
-        Task { await refreshMetadata() }
+        Task {
+            try? await GitService.unstageAndIgnore(url, in: project.url)
+            await refreshMetadata()
+        }
     }
 
     private func toggleGitignore(_ url: URL, add: Bool) {
-        if add {
-            try? GitService.addToGitignore(url.lastPathComponent, folder: project.url)
-        } else {
-            try? GitService.removeFromGitignore(url.lastPathComponent, folder: project.url)
+        Task {
+            if add {
+                try? await GitService.addToGitignore(url.lastPathComponent, folder: project.url)
+            } else {
+                try? await GitService.removeFromGitignore(url.lastPathComponent, folder: project.url)
+            }
+            await refreshMetadata()
         }
-        Task { await refreshMetadata() }
     }
 }

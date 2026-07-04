@@ -1,59 +1,16 @@
 //
-//  SettingsView.swift
+//  ClassificationSettingsPane.swift
 //  EnvHub
 //
-//  Consolidated settings: general prefs, editable classification rules, and scanning
-//  patterns/exclusions. (Scan-folder management lives in the scanner, M6.)
+//  Editable, ordered filename → environment regex rules (first match wins), with a
+//  live "test a filename" probe at the bottom.
 //
 
 import SwiftUI
 import SwiftData
 import Core
 
-struct SettingsView: View {
-    var body: some View {
-        TabView {
-            GeneralSettingsPane()
-                .tabItem { Label("General", systemImage: "gearshape") }
-            ClassificationSettingsPane()
-                .tabItem { Label("Classification", systemImage: "tag") }
-            ScanningSettingsPane()
-                .tabItem { Label("Scanning", systemImage: "magnifyingglass") }
-        }
-        .frame(width: 580, height: 480)
-    }
-}
-
-// MARK: - General
-
-private struct GeneralSettingsPane: View {
-    @Environment(\.modelContext) private var context
-    @Query private var rows: [AppSettings]
-
-    var body: some View {
-        Form {
-            if let settings = rows.first {
-                @Bindable var settings = settings
-                Section("Editor") {
-                    Toggle("Mask values by default", isOn: $settings.maskByDefault)
-                    Text("New files open with values hidden; reveal them per-row or with the eye toggle.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                Section("Scanning") {
-                    Toggle("Deep scan (recurse into subfolders) by default", isOn: $settings.deepScanDefault)
-                }
-            } else {
-                ProgressView()
-            }
-        }
-        .formStyle(.grouped)
-        .task { _ = EnvHubStore.settings(in: context) }
-    }
-}
-
-// MARK: - Classification
-
-private struct ClassificationSettingsPane: View {
+struct ClassificationSettingsPane: View {
     @Environment(\.modelContext) private var context
     @Query private var rows: [AppSettings]
     @State private var testName = ".env.production"
@@ -117,6 +74,9 @@ private struct ClassificationSettingsPane: View {
     }
 }
 
+/// One editable rule row. Rules live as an encoded array on `AppSettings`, so the
+/// bindings rewrite the whole array through the settings object (SwiftData persists
+/// the change automatically).
 private struct RuleRow: View {
     let rule: ClassificationRule
     let settings: AppSettings
@@ -145,65 +105,5 @@ private struct RuleRow: View {
                 }
             }
         )
-    }
-}
-
-// MARK: - Scanning
-
-private struct ScanningSettingsPane: View {
-    @Environment(\.modelContext) private var context
-    @Query private var rows: [AppSettings]
-
-    var body: some View {
-        Form {
-            if let settings = rows.first {
-                @Bindable var settings = settings
-                StringListSection(
-                    title: "Filename patterns",
-                    footer: "Glob patterns for env files (e.g. .env, .env.*).",
-                    placeholder: ".env.*",
-                    items: $settings.filenamePatterns
-                )
-                StringListSection(
-                    title: "Excluded directories",
-                    footer: "Directory names skipped while scanning.",
-                    placeholder: "node_modules",
-                    items: $settings.exclusions
-                )
-            } else {
-                ProgressView()
-            }
-        }
-        .formStyle(.grouped)
-        .task { _ = EnvHubStore.settings(in: context) }
-    }
-}
-
-private struct StringListSection: View {
-    let title: String
-    let footer: String
-    let placeholder: String
-    @Binding var items: [String]
-
-    var body: some View {
-        Section {
-            ForEach(items.indices, id: \.self) { i in
-                HStack {
-                    TextField(placeholder, text: $items[i]).monospaced()
-                    Button(role: .destructive) {
-                        items.remove(at: i)
-                    } label: {
-                        Image(systemName: "minus.circle.fill")
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundStyle(.secondary)
-                }
-            }
-            Button { items.append("") } label: { Label("Add", systemImage: "plus") }
-        } header: {
-            Text(title)
-        } footer: {
-            Text(footer).font(.caption).foregroundStyle(.secondary)
-        }
     }
 }

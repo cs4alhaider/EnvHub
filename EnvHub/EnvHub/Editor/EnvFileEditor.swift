@@ -140,6 +140,15 @@ struct EnvFileEditor: View {
                 }
                 .width(min: 200, ideal: 380)
 
+                // Bound to the `# comment` line directly above the key in the file —
+                // editing here rewrites that line on Save (see EnvVar.comment).
+                TableColumn("Comment") { row in
+                    TextField("Add comment…", text: commentBinding(row))
+                        .textFieldStyle(.plain)
+                        .foregroundStyle(.secondary)
+                }
+                .width(min: 120, ideal: 240)
+
                 TableColumn("") { row in
                     statusCell(row)
                 }
@@ -157,7 +166,7 @@ struct EnvFileEditor: View {
                     .textFieldStyle(.plain)
                     .monospaced()
             } else {
-                Text(masked(row.value))
+                Text(ValueMasking.masked(row.value))
                     .foregroundStyle(.secondary)
                     .monospaced()
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -194,10 +203,6 @@ struct EnvFileEditor: View {
         NSPasteboard.general.setString(model.currentText, forType: .string)
     }
 
-    private func masked(_ value: String) -> String {
-        value.isEmpty ? "" : String(repeating: "•", count: min(max(value.count, 3), 20))
-    }
-
     private func keyBinding(_ row: EnvVar) -> Binding<String> {
         Binding(
             get: { model.rows.first(where: { $0.id == row.id })?.key ?? row.key },
@@ -212,6 +217,19 @@ struct EnvFileEditor: View {
             get: { model.rows.first(where: { $0.id == row.id })?.value ?? row.value },
             set: { newValue in
                 if let i = model.rows.firstIndex(where: { $0.id == row.id }) { model.rows[i].value = newValue }
+            }
+        )
+    }
+
+    /// `nil` comment ↔ empty field (typing spaces only still means "no comment" —
+    /// the writer normalizes that away).
+    private func commentBinding(_ row: EnvVar) -> Binding<String> {
+        Binding(
+            get: { model.rows.first(where: { $0.id == row.id })?.comment ?? row.comment ?? "" },
+            set: { newValue in
+                if let i = model.rows.firstIndex(where: { $0.id == row.id }) {
+                    model.rows[i].comment = newValue.isEmpty ? nil : newValue
+                }
             }
         )
     }

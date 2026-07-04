@@ -3,7 +3,8 @@
 //  EnvHub
 //
 //  Sheet for discovering .env files: choose/remember folders, optional deep scan
-//  (cancellable, with progress), then accept discovered projects.
+//  (parallel, cancellable with Stop & Review), already-added results are marked and
+//  skipped, and accepted projects can land straight in a workspace.
 //
 
 import SwiftUI
@@ -22,7 +23,9 @@ struct ScanView: View {
             if let model {
                 ScanContent(model: model)
             } else {
-                ProgressView().frame(width: 560, height: 520)
+                // Match ScanContent's initial (compact) size so the sheet doesn't jump
+                // when the model finishes loading.
+                ProgressView().frame(width: 580, height: 400)
             }
         }
         .task {
@@ -38,7 +41,10 @@ private struct ScanContent: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @Query(sort: \ScanFolderRecord.dateAdded) private var folders: [ScanFolderRecord]
+    @Query private var projects: [ProjectRecord]
+    @Query private var workspaceRows: [WorkspaceRecord]
     @State private var resultSearch = ""
+    @State private var destinationWorkspaceID: UUID?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -100,7 +106,8 @@ private struct ScanContent: View {
             Toggle("Deep scan (recurse into subfolders)", isOn: $model.deepScan)
             Spacer()
             if model.isScanning {
-                Button("Cancel Scan", role: .cancel) { model.cancel() }
+                Button { model.stop() } label: { Label("Stop & Review", systemImage: "stop.circle") }
+                    .help("Stop the scan and review what has been found so far")
             } else {
                 Button { runScan() } label: { Label("Scan", systemImage: "magnifyingglass") }
                     .buttonStyle(.borderedProminent)
@@ -135,27 +142,61 @@ private struct ScanContent: View {
                 HStack(spacing: 8) {
                     Image(systemName: "line.3.horizontal.decrease.circle").foregroundStyle(.secondary)
                     TextField("Filter results…", text: $resultSearch).textFieldStyle(.roundedBorder)
-                    Button("Select All") { setSelection(filteredResults, selected: true) }
+                    Button("Select All") { setSelection(selectableResults, selected: true) }
                     Button("Select None") { setSelection(filteredResults, selected: false) }
                 }
                 .padding(.horizontal, 12).padding(.vertical, 8)
                 Divider()
                 List {
-                    Section("\(filteredResults.count) shown · \(model.selected.count) selected") {
+                    Section(resultsSummary) {
                         ForEach(filteredResults) { project in
-                            Toggle(isOn: selectionBinding(project.folder)) {
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(project.name).fontWeight(.medium)
-                                    Text("\(project.folder.path(percentEncoded: false)) · \(project.files.count) file\(project.files.count == 1 ? "" : "s")")
-                                        .font(.caption).foregroundStyle(.secondary)
-                                        .lineLimit(1).truncationMode(.middle)
-                                }
-                            }
+                            resultRow(project)
                         }
                     }
                 }
             }
         }
+    }
+
+    private func resultRow(_ project: DiscoveredProject) -> some View {
+        let added = model.isAlreadyAdded(project)
+        return Toggle(isOn: selectionBinding(project.folder)) {
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(project.name).fontWeight(.medium)
+                    Text(project.folder.path(percentEncoded: false))
+                        .font(.caption).foregroundStyle(.secondary)
+                        .lineLimit(1).truncationMode(.middle)
+                    Text(project.files.map(\.lastPathComponent).joined(separator: " · "))
+                        .font(.caption2).foregroundStyle(.tertiary).monospaced()
+                        .lineLimit(1).truncationMode(.tail)
+                }
+                Spacer(minLength: 8)
+                if added {
+                    Text("Added")
+                        .font(.caption2.weight(.medium))
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(.quaternary, in: Capsule())
+                        .foregroundStyle(.secondary)
+                        .help("Already in your sidebar — re-importing is skipped")
+                }
+            }
+        }
+        .disabled(added)
+    }
+
+    /// "42 found · 3 already added · 2.4s" — the after-scan summary in the list header.
+    private var resultsSummary: String {
+        var parts = ["\(filteredResults.count) shown", "\(model.selected.count) selected"]
+        if !model.alreadyAdded.isEmpty {
+            parts.append("\(model.alreadyAdded.count) already added")
+        }
+        if let duration = model.scanDuration {
+            let seconds = Double(duration.components.seconds)
+                + Double(duration.components.attoseconds) / 1e18
+            parts.append(String(format: "%.1fs", seconds))
+        }
+        return parts.joined(separator: " · ")
     }
 
     private var filteredResults: [DiscoveredProject] {
@@ -164,6 +205,11 @@ private struct ScanContent: View {
         return model.results.filter {
             $0.name.lowercased().contains(q) || $0.folder.path(percentEncoded: false).lowercased().contains(q)
         }
+    }
+
+    /// What "Select All" targets: visible results that aren't already in the sidebar.
+    private var selectableResults: [DiscoveredProject] {
+        filteredResults.filter { !model.isAlreadyAdded($0) }
     }
 
     private func setSelection(_ projects: [DiscoveredProject], selected: Bool) {
@@ -176,14 +222,28 @@ private struct ScanContent: View {
         HStack {
             Button("Close") { dismiss() }
             Spacer()
+            if !workspaces.isEmpty {
+                Picker("Add to", selection: $destinationWorkspaceID) {
+                    Text("No Workspace").tag(UUID?.none)
+                    ForEach(workspaces) { workspace in
+                        Text(workspace.name).tag(Optional(workspace.id))
+                    }
+                }
+                .fixedSize()
+                .help("Which sidebar workspace the imported projects go into")
+            }
             Button("Add \(model.selected.count) Project\(model.selected.count == 1 ? "" : "s")") {
-                model.addSelectedProjects(to: context)
+                model.addSelectedProjects(to: context, workspaceID: destinationWorkspaceID)
                 dismiss()
             }
             .buttonStyle(.borderedProminent)
             .disabled(model.selected.isEmpty)
         }
         .padding(12)
+    }
+
+    private var workspaces: [WorkspaceRecord] {
+        WorkspaceStore.orderedWorkspaces(workspaceRows)
     }
 
     // MARK: Actions
@@ -205,7 +265,11 @@ private struct ScanContent: View {
 
     private func runScan() {
         let settings = EnvHubStore.settings(in: context)
-        model.run(roots: folders.map(\.url), baseConfig: settings.scanConfig)
+        model.run(
+            roots: folders.map(\.url),
+            baseConfig: settings.scanConfig,
+            existingProjectPaths: Set(projects.map { ProjectStore.canonicalPath(for: $0.url) })
+        )
     }
 
     private func selectionBinding(_ folder: URL) -> Binding<Bool> {

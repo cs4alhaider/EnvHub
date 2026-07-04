@@ -88,7 +88,7 @@ struct DiffView: View {
             if absent || text == nil {
                 Text("—").foregroundStyle(.tertiary)
             } else {
-                Text(reveal ? (text ?? "") : masked(text ?? ""))
+                Text(reveal ? (text ?? "") : ValueMasking.masked(text ?? ""))
                     .foregroundStyle(.primary)
             }
         }
@@ -150,9 +150,5 @@ struct DiffView: View {
         let lv = (try? EnvFileService.load(l))?.variables ?? []
         let rv = (try? EnvFileService.load(r))?.variables ?? []
         entries = EnvDiff.compare(left: lv, right: rv)
-    }
-
-    private func masked(_ value: String) -> String {
-        value.isEmpty ? "" : String(repeating: "•", count: min(max(value.count, 3), 20))
     }
 }

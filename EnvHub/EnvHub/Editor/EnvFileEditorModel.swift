@@ -7,7 +7,8 @@
 //  Save (via Core).
 //
 
-import SwiftUI
+import Foundation
+import Observation
 import Core
 
 @MainActor

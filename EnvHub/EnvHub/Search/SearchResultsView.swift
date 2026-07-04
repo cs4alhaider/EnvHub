@@ -16,13 +16,6 @@ struct SearchResultsView: View {
 
     @State private var reveal = false
 
-    private struct ProjectGroup: Identifiable {
-        let id: UUID
-        let name: String
-        let path: String
-        let hits: [IndexedVariable]
-    }
-
     var body: some View {
         content
             .navigationTitle("Search")
@@ -49,7 +42,7 @@ struct SearchResultsView: View {
             )
         } else {
             List {
-                ForEach(groups) { group in
+                ForEach(ProjectSearch.groupedByProject(hits)) { group in
                     Section {
                         ForEach(group.hits, id: \.self) { hit in
                             Button { onSelect(hit.projectID, hit.fileURL) } label: { row(hit) }
@@ -72,31 +65,12 @@ struct SearchResultsView: View {
             Circle().fill(hit.kind.tint).frame(width: 7, height: 7)
             Text(hit.key).monospaced().fontWeight(.medium)
             Text("=").foregroundStyle(.tertiary)
-            Text(reveal ? hit.value : masked(hit.value))
+            Text(reveal ? hit.value : ValueMasking.masked(hit.value, maxDots: 16))
                 .monospaced().foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
             Spacer(minLength: 8)
             Text(hit.fileName).font(.caption).foregroundStyle(.secondary).monospaced()
             Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary)
         }
         .contentShape(Rectangle())
-    }
-
-    private var groups: [ProjectGroup] {
-        var order: [UUID] = []
-        var map: [UUID: [IndexedVariable]] = [:]
-        for hit in hits {
-            if map[hit.projectID] == nil { order.append(hit.projectID) }
-            map[hit.projectID, default: []].append(hit)
-        }
-        return order
-            .map { id in
-                let hs = map[id] ?? []
-                return ProjectGroup(id: id, name: hs.first?.projectName ?? "", path: hs.first?.projectPath ?? "", hits: hs)
-            }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
-
-    private func masked(_ value: String) -> String {
-        value.isEmpty ? "" : String(repeating: "•", count: min(max(value.count, 3), 16))
     }
 }

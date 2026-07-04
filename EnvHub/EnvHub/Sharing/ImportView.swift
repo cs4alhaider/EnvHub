@@ -94,21 +94,18 @@ struct ImportView: View {
 
     // MARK: Actions
 
+    /// Read + decrypt off the main actor. `EnvelopeError` is `LocalizedError` in the
+    /// package, so `localizedDescription` is already user-friendly here.
     private func decrypt() {
         busy = true
         error = nil
-        let crypto = self.crypto
-        let url = fileURL
-        let password = self.password
         Task {
             do {
-                let data = try Data(contentsOf: url)
-                let result = try await Task.detached(priority: .userInitiated) {
-                    try crypto.decrypt(data, password: password)
-                }.value
-                await MainActor.run { busy = false; export = result }
+                export = try await crypto.decrypt(contentsOf: fileURL, password: password)
+                busy = false
             } catch {
-                await MainActor.run { busy = false; self.error = friendly(error) }
+                busy = false
+                self.error = error.localizedDescription
             }
         }
     }
@@ -116,14 +113,15 @@ struct ImportView: View {
     private func materialize(_ export: EnvExport) {
         guard let destination else { return }
         error = nil
-        do {
-            written = try crypto.materialize(export, into: destination, overwrite: overwrite)
-        } catch let e as EnvExportError {
-            if case .fileExists(let url) = e {
-                error = "“\(url.lastPathComponent)” already exists. Turn on “Overwrite” to replace it."
+        Task {
+            do {
+                written = try await crypto.materialize(export, into: destination, overwrite: overwrite)
+            } catch let e as EnvExportError {
+                // Add the app-specific remedy on top of the shared message.
+                error = (e.errorDescription ?? "A file already exists.") + " Turn on “Overwrite” to replace it."
+            } catch {
+                self.error = error.localizedDescription
             }
-        } catch {
-            self.error = error.localizedDescription
         }
     }
 
@@ -134,16 +132,5 @@ struct ImportView: View {
         panel.prompt = "Choose"
         panel.message = "Choose where to write the imported .env file(s)"
         if panel.runModal() == .OK { destination = panel.url }
-    }
-
-    private func friendly(_ error: Error) -> String {
-        guard let e = error as? EnvelopeError else { return error.localizedDescription }
-        switch e {
-        case .wrongPasswordOrCorrupted: return "Wrong password, or the file has been tampered with."
-        case .unsupportedVersion(let v): return "Unsupported .envenc version (\(v))."
-        case .unsupportedKDF(let k): return "Unsupported key-derivation function (\(k))."
-        case .malformedEnvelope: return "This isn’t a valid .envenc file."
-        case .invalidScryptParams: return "The file has invalid encryption parameters."
-        }
     }
 }

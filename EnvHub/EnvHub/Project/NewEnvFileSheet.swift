@@ -15,6 +15,7 @@ struct NewEnvFileSheet: View {
     let onCreated: (URL) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
 
     @State private var name = ".env"
     @State private var copyFrom: URL?
@@ -77,9 +78,9 @@ struct NewEnvFileSheet: View {
         }
         .padding(16)
         .frame(width: 470)
-        .task { isRepo = GitService.repoRoot(for: projectFolder) != nil }
+        .task { isRepo = await GitService.repoRoot(for: projectFolder) != nil }
         .onChange(of: name) { _, newValue in
-            if newValue.trimmingCharacters(in: .whitespaces) == ".env.example" { addToGitignore = false }
+            if isSafeToTrack(newValue) { addToGitignore = false }
         }
     }
 
@@ -88,25 +89,36 @@ struct NewEnvFileSheet: View {
         return n == ".env" || n.hasPrefix(".env.")
     }
 
-    private func setPreset(_ preset: String) {
-        name = preset
-        addToGitignore = preset != ".env.example"
+    /// Whether the typed name classifies (under the user's own rules) as a kind that's
+    /// meant to be committed — e.g. `.env.example` — so gitignoring it would be wrong.
+    private func isSafeToTrack(_ filename: String) -> Bool {
+        ProjectLoader.classify(
+            fileName: filename.trimmingCharacters(in: .whitespaces),
+            rules: EnvHubStore.settings(in: context).classificationRules
+        ).isSafeToTrack
     }
 
+    private func setPreset(_ preset: String) {
+        name = preset
+        addToGitignore = !isSafeToTrack(preset)
+    }
+
+    /// Create the file, then (optionally) gitignore it *before* notifying the parent —
+    /// the parent reloads metadata on `onCreated`, so ordering matters.
     private func create() {
         let filename = name.trimmingCharacters(in: .whitespaces)
         let url = projectFolder.appendingPathComponent(filename)
-        do {
-            try EnvFileService.create(at: url, copyingKeysFrom: copyFrom)
-            if isRepo && addToGitignore {
-                try? GitService.addToGitignore(filename, folder: projectFolder)
+        Task {
+            do {
+                try EnvFileService.create(at: url, copyingKeysFrom: copyFrom)
+                if isRepo && addToGitignore {
+                    try? await GitService.addToGitignore(filename, folder: projectFolder)
+                }
+                onCreated(url)
+                dismiss()
+            } catch {
+                self.error = error.localizedDescription
             }
-            onCreated(url)
-            dismiss()
-        } catch let e as EnvExportError {
-            if case .fileExists = e { error = "“\(filename)” already exists." }
-        } catch {
-            self.error = error.localizedDescription
         }
     }
 }

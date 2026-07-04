@@ -76,37 +76,28 @@ struct ExportSheet: View {
 
     private var isValid: Bool { !password.isEmpty && password == confirm }
 
+    /// Encrypt off the main actor (`CryptoService` methods are `@concurrent`; scrypt is
+    /// deliberately slow), then land back here to present the save panel.
     private func export() {
         busy = true
         error = nil
-        let crypto = self.crypto
-        let scope = self.scope
-        let password = self.password
-        let projectName = self.projectName
-        let currentFile = self.currentFile
-        let allFiles = self.allFiles
         let suggested = scope == .single ? (currentFile?.fileName ?? projectName) : projectName
 
         Task {
             do {
-                let data = try await Task.detached(priority: .userInitiated) { () throws -> Data in
-                    switch scope {
-                    case .single:
-                        guard let f = currentFile else { throw ExportUIError.noFile }
-                        return try crypto.exportSingle(fileURL: f.path, kind: f.kind, password: password)
-                    case .project:
-                        return try crypto.exportProject(name: projectName, files: allFiles, password: password)
-                    }
-                }.value
-                await MainActor.run {
-                    busy = false
-                    presentSavePanel(data, suggestedName: suggested)
+                let data: Data
+                switch scope {
+                case .single:
+                    guard let file = currentFile else { throw ExportUIError.noFile }
+                    data = try await crypto.exportSingle(fileURL: file.path, kind: file.kind, password: password)
+                case .project:
+                    data = try await crypto.exportProject(name: projectName, files: allFiles, password: password)
                 }
+                busy = false
+                presentSavePanel(data, suggestedName: suggested)
             } catch {
-                await MainActor.run {
-                    busy = false
-                    self.error = error.localizedDescription
-                }
+                busy = false
+                self.error = error.localizedDescription
             }
         }
     }
