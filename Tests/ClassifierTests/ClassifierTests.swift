@@ -16,12 +16,23 @@ struct ClassifierTests {
         #expect(EnvClassifier.classify(fileName: ".env.stag", rules: rules) == .staging)
         #expect(EnvClassifier.classify(fileName: ".env.production", rules: rules) == .production)
         #expect(EnvClassifier.classify(fileName: ".env.prod", rules: rules) == .production)
+        #expect(EnvClassifier.classify(fileName: ".env.local", rules: rules) == .local)
+        #expect(EnvClassifier.classify(fileName: ".env.example", rules: rules) == .example)
+        #expect(EnvClassifier.classify(fileName: ".env.sample", rules: rules) == .example)
+    }
+
+    @Test("Example wins over environment names; local wins over its base environment")
+    func precedence() {
+        // ".env.production.example" is a template of production values — an example.
+        #expect(EnvClassifier.classify(fileName: ".env.production.example", rules: rules) == .example)
+        // ".env.development.local" is a machine-local override — local.
+        #expect(EnvClassifier.classify(fileName: ".env.development.local", rules: rules) == .local)
     }
 
     @Test("Unmatched filenames fall into .other")
     func unmatched() {
-        #expect(EnvClassifier.classify(fileName: ".env.local", rules: rules) == .other)
         #expect(EnvClassifier.classify(fileName: ".env.test", rules: rules) == .other)
+        #expect(EnvClassifier.classify(fileName: ".env.ci", rules: rules) == .other)
     }
 
     @Test("First matching rule wins (order matters)")
