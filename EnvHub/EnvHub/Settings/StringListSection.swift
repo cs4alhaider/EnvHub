@@ -17,7 +17,9 @@ struct StringListSection: View {
         Section {
             ForEach(items.indices, id: \.self) { i in
                 HStack {
-                    TextField(placeholder, text: $items[i]).monospaced()
+                    TextField(placeholder, text: $items[i], prompt: Text(placeholder))
+                        .labelsHidden()
+                        .monospaced()
                     Button(role: .destructive) {
                         items.remove(at: i)
                     } label: {
