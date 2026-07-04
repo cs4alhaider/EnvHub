@@ -7,7 +7,11 @@
 //   • Project        — a folder containing one or more EnvFiles
 //   • EnvDocument    — a faithfully-parsed .env file (EnvLine / EnvEntry)
 //   • EnvDiagnostic  — duplicate-key / malformed-line warnings
+//   • EnvDiff        — side-by-side comparison of two environments
+//   • EnvExport / EnvelopeError / ScryptParams — .envenc payloads + errors
+//   • ScanProgress / DiscoveredProject — filesystem-discovery results
 //   • ClassificationRule / ScanConfig — editable settings
+//   • ValueMasking   — the one place secret values become mask dots
 //
 // SwiftData `@Model` persistence entities deliberately live in `Core`, not here, so
 // this module stays value-type-only and usable from the CLI.

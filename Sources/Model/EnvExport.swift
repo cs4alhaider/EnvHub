@@ -11,6 +11,20 @@ public enum EnvelopeError: Error, Equatable {
     case wrongPasswordOrCorrupted
 }
 
+/// User-facing messages so `error.localizedDescription` reads well in both the app
+/// and the CLI without either duplicating the mapping.
+extension EnvelopeError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .unsupportedVersion(let v): "Unsupported .envenc version (\(v))."
+        case .unsupportedKDF(let k): "Unsupported key-derivation function (\(k))."
+        case .malformedEnvelope: "This isn’t a valid .envenc file."
+        case .invalidScryptParams: "The file has invalid encryption parameters."
+        case .wrongPasswordOrCorrupted: "Wrong password, or the file has been tampered with."
+        }
+    }
+}
+
 /// scrypt key-derivation parameters, serialized into the `.envenc` envelope.
 public struct ScryptParams: Codable, Sendable, Hashable {
     public var N: Int

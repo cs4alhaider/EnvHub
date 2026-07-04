@@ -70,6 +70,22 @@ public enum EnvLine: Sendable, Hashable, Codable {
     case malformed(String, MalformedReason)  // raw text that isn't a valid key/value line
 }
 
+public extension EnvLine {
+    /// For a `.comment` line, the human-readable text; `nil` for every other case.
+    var commentText: String? {
+        guard case .comment(let raw) = self else { return nil }
+        return EnvLine.commentText(from: raw)
+    }
+
+    /// Extract the human text of a raw comment line: strips surrounding whitespace and
+    /// exactly one leading `#` (so `"##  note"` keeps its intentional `#` prefix).
+    static func commentText(from raw: String) -> String {
+        var text = raw.trimmingCharacters(in: .whitespaces)
+        if text.hasPrefix("#") { text.removeFirst() }
+        return text.trimmingCharacters(in: .whitespaces)
+    }
+}
+
 /// A faithfully-parsed `.env` file: an ordered list of lines plus the line-ending style
 /// and trailing-newline flag needed to reproduce the original bytes.
 public struct EnvDocument: Sendable, Hashable, Codable {
@@ -89,8 +105,22 @@ public struct EnvDocument: Sendable, Hashable, Codable {
     }
 
     /// The editable key/value units derived from the entries, in file order.
+    ///
+    /// Each variable also carries the text of the **single comment line directly
+    /// above** its entry (no blank line in between) as its `comment` — that's the
+    /// association the editor's Comment column edits and `EnvParser.applyEdits`
+    /// reconciles back onto the file.
     public var variables: [EnvVar] {
-        entries.map { EnvVar(id: $0.id, key: $0.key, value: $0.value) }
+        var result: [EnvVar] = []
+        for (index, line) in lines.enumerated() {
+            guard case .entry(let e) = line else { continue }
+            let comment = index > 0 ? lines[index - 1].commentText : nil
+            result.append(EnvVar(
+                id: e.id, key: e.key, value: e.value,
+                comment: (comment?.isEmpty == false) ? comment : nil
+            ))
+        }
+        return result
     }
 
     /// Keys that appear on more than one entry line.
