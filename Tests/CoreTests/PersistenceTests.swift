@@ -108,6 +108,58 @@ struct PersistenceTests {
         #expect(settings.classificationRules.map(\.pattern) == ["my-prod", "stag|staging", "dev|development|^\\.env$"])
     }
 
+    @Test("Search is exclusion-based: everything searchable by default, toggles persist")
+    func searchKinds() {
+        let settings = EnvHubStore.settings(in: context)
+        // Default: nothing excluded, so every catalog kind (and unknown kinds) search.
+        #expect(settings.searchExcludedKinds.isEmpty)
+        #expect(settings.isSearchable(.example))
+        #expect(settings.isSearchable(EnvKind(rawValue: "uat")))   // unknown kind defaults visible
+
+        settings.setSearchable(.example, false)
+        #expect(settings.searchExcludedKinds == [EnvKind.example.rawValue])
+        #expect(!settings.isSearchable(.example))
+        #expect(settings.isSearchable(.development))
+
+        settings.setSearchable(.example, true)
+        #expect(settings.searchExcludedKinds.isEmpty)
+    }
+
+    @Test("Environment definitions default to the shipped catalog and round-trip")
+    func environmentDefinitions() {
+        let settings = EnvHubStore.settings(in: context)
+        #expect(settings.environmentDefinitions == EnvironmentDefinition.defaults)
+
+        let uat = EnvKind.slug(from: "UAT")
+        var defs = settings.environmentDefinitions
+        defs.insert(EnvironmentDefinition(kind: uat, title: "UAT", color: .teal), at: 2)
+        settings.environmentDefinitions = defs
+        #expect(settings.environmentCatalog.title(for: uat) == "UAT")
+        #expect(settings.environmentCatalog.color(for: uat) == .teal)
+    }
+
+    @Test("removeAll forgets projects but keeps workspaces and settings; reset wipes everything")
+    func removeAllAndReset() throws {
+        let ws = WorkspaceStore.create(named: "Keep", in: context)
+        _ = ProjectStore.addProject(at: URL(filePath: "/tmp/one"), to: context, workspaceID: ws.id)
+        _ = ProjectStore.addProject(at: URL(filePath: "/tmp/two"), to: context)
+        context.insert(ScanFolderRecord(path: "/tmp"))
+        EnvHubStore.settings(in: context).maskByDefault = false
+
+        ProjectStore.removeAll(in: context)
+        #expect(try context.fetch(FetchDescriptor<ProjectRecord>()).isEmpty)
+        #expect(try context.fetch(FetchDescriptor<WorkspaceRecord>()).count == 1)
+        #expect(EnvHubStore.settings(in: context).maskByDefault == false)
+
+        EnvHubStore.reset(in: context)
+        #expect(try context.fetch(FetchDescriptor<WorkspaceRecord>()).isEmpty)
+        #expect(try context.fetch(FetchDescriptor<ScanFolderRecord>()).isEmpty)
+        // A fresh settings row comes back with defaults (mask on, onboarding unseen).
+        let fresh = EnvHubStore.settings(in: context)
+        #expect(fresh.maskByDefault == true)
+        #expect(fresh.hasSeenOnboarding == false)
+    }
+
     @Test("A stored legacy exclusion list is upgraded; a customized one is untouched")
     func legacyExclusionMigration() {
         let settings = EnvHubStore.settings(in: context)

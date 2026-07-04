@@ -88,20 +88,35 @@ public final class AppSettings {
     public var deepScanDefault: Bool
     public var filenamePatterns: [String]
     public var exclusions: [String]
+    /// Whether the welcome flow has been completed. Defaults to `false` (also for
+    /// stores migrating from older versions — showing the welcome once after an
+    /// upgrade is intentional, since it introduces the newer features).
+    public var hasSeenOnboarding: Bool = false
+    /// Raw values of the `EnvKind`s the user has excluded from search results
+    /// (Settings → Search). Stored as the exclusion so the default — empty — means
+    /// "search everything" and new environments are included automatically.
+    public var searchExcludedKinds: [String] = []
     private var classificationRulesData: Data
+    /// Encoded user-defined environment catalog (name/color/safe-to-track per kind).
+    /// Empty data means "use the shipped defaults", so existing stores migrate for free.
+    private var environmentDefinitionsData: Data = Data()
 
     public init(
         maskByDefault: Bool = true,
         deepScanDefault: Bool = false,
         filenamePatterns: [String] = ScanConfig.defaultFilenamePatterns,
         exclusions: [String] = ScanConfig.defaultExclusions,
-        classificationRules: [ClassificationRule] = ClassificationRule.defaults
+        classificationRules: [ClassificationRule] = ClassificationRule.defaults,
+        environmentDefinitions: [EnvironmentDefinition] = EnvironmentDefinition.defaults,
+        hasSeenOnboarding: Bool = false
     ) {
         self.maskByDefault = maskByDefault
         self.deepScanDefault = deepScanDefault
         self.filenamePatterns = filenamePatterns
         self.exclusions = exclusions
+        self.hasSeenOnboarding = hasSeenOnboarding
         self.classificationRulesData = (try? JSONEncoder().encode(classificationRules)) ?? Data()
+        self.environmentDefinitionsData = (try? JSONEncoder().encode(environmentDefinitions)) ?? Data()
     }
 
     /// Ordered classification rules (decoded from storage; falls back to defaults).
@@ -110,8 +125,34 @@ public final class AppSettings {
         set { classificationRulesData = (try? JSONEncoder().encode(newValue)) ?? classificationRulesData }
     }
 
+    /// User-defined environments (title/color/safe-to-track per kind). Falls back to
+    /// the shipped defaults when unset.
+    public var environmentDefinitions: [EnvironmentDefinition] {
+        get { (try? JSONDecoder().decode([EnvironmentDefinition].self, from: environmentDefinitionsData)) ?? EnvironmentDefinition.defaults }
+        set { environmentDefinitionsData = (try? JSONEncoder().encode(newValue)) ?? environmentDefinitionsData }
+    }
+
+    /// The catalog view over `environmentDefinitions` — the one object the app and CLI
+    /// consult for a kind's title, color, ordering, and safe-to-track flag.
+    public var environmentCatalog: EnvironmentCatalog {
+        EnvironmentCatalog(definitions: environmentDefinitions)
+    }
+
     /// A value-type snapshot of the scan-related settings.
     public var scanConfig: ScanConfig {
         ScanConfig(filenamePatterns: filenamePatterns, exclusions: exclusions, deepScan: deepScanDefault)
+    }
+
+    /// Whether a kind's variables appear in search results. Exclusion-based, so a
+    /// newly-added environment is searchable until the user turns it off.
+    public func isSearchable(_ kind: EnvKind) -> Bool {
+        !searchExcludedKinds.contains(kind.rawValue)
+    }
+
+    /// Toggle a kind's presence in search results.
+    public func setSearchable(_ kind: EnvKind, _ searchable: Bool) {
+        var excluded = Set(searchExcludedKinds)
+        if searchable { excluded.remove(kind.rawValue) } else { excluded.insert(kind.rawValue) }
+        searchExcludedKinds = excluded.sorted()
     }
 }

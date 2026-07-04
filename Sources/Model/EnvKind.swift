@@ -1,47 +1,71 @@
 import Foundation
 
-/// The environment a `.env` file belongs to. Files map into these via editable
-/// classification rules (see `ClassificationRule`); anything unmatched is `.other`.
-public enum EnvKind: String, Codable, Sendable, Hashable, CaseIterable, Identifiable {
-    case development
-    case staging
-    case production
-    /// Local overrides (`.env.local`, `.env.development.local`, …) — machine-specific,
-    /// conventionally gitignored.
-    case local
-    /// Template files with placeholder values (`.env.example`, `.env.sample`, …) —
-    /// conventionally **committed** so teammates know which keys a project needs.
-    case example
-    case other
+/// The environment a `.env` file belongs to — an **open** set, not a fixed enum, so
+/// users can define their own (UAT, pre-prod, …) in Settings → Classification.
+///
+/// An `EnvKind` is just a stable slug (`"production"`, `"uat"`). Everything
+/// presentational — display title, color, whether files of this kind are safe to
+/// commit — lives in the user-editable `EnvironmentDefinition` list, resolved through
+/// an `EnvironmentCatalog`. Files classify into kinds via `ClassificationRule`s;
+/// anything unmatched is `.other`.
+///
+/// Encodes as a plain string (exactly like the enum it replaced), so stored rules,
+/// `.envenc` exports, and settings from older versions decode unchanged.
+public struct EnvKind: RawRepresentable, Hashable, Sendable, Identifiable {
+    public var rawValue: String
+
+    public init(rawValue: String) {
+        self.rawValue = rawValue
+    }
 
     public var id: String { rawValue }
 
-    /// Human-readable title for tabs and headers.
-    public var title: String {
-        switch self {
-        case .development: "Development"
-        case .staging: "Staging"
-        case .production: "Production"
-        case .local: "Local"
-        case .example: "Example"
-        case .other: "Other"
-        }
+    /// Fallback display title when a kind has no definition in the catalog (e.g. a
+    /// rule still points at a deleted custom environment): the capitalized slug.
+    public var defaultTitle: String {
+        guard let first = rawValue.first else { return rawValue }
+        return first.uppercased() + rawValue.dropFirst()
     }
 
-    /// Stable display order (Dev → Staging → Prod → Local → Example → Other).
-    public var sortOrder: Int {
-        switch self {
-        case .development: 0
-        case .staging: 1
-        case .production: 2
-        case .local: 3
-        case .example: 4
-        case .other: 5
+    /// Make a slug for a user-entered environment name: lowercased, alphanumerics
+    /// kept, everything else collapsed to single dashes ("Pre Prod!" → "pre-prod").
+    public static func slug(from name: String) -> EnvKind {
+        var slug = ""
+        var lastWasDash = true   // suppress leading dashes
+        for character in name.lowercased() {
+            if character.isLetter || character.isNumber {
+                slug.append(character)
+                lastWasDash = false
+            } else if !lastWasDash {
+                slug.append("-")
+                lastWasDash = true
+            }
         }
+        while slug.hasSuffix("-") { slug.removeLast() }
+        return EnvKind(rawValue: slug.isEmpty ? "environment" : slug)
     }
 
-    /// Whether files of this kind are *meant* to be committed. Example/template files
-    /// carry placeholder values, so the app's git-tracking warning must not fire for
-    /// them — everything else holding real values is a leak risk when tracked.
-    public var isSafeToTrack: Bool { self == .example }
+    // MARK: Built-in kinds (the shipped defaults; users can add more)
+
+    public static let development = EnvKind(rawValue: "development")
+    public static let staging = EnvKind(rawValue: "staging")
+    public static let production = EnvKind(rawValue: "production")
+    public static let local = EnvKind(rawValue: "local")
+    public static let example = EnvKind(rawValue: "example")
+    /// The fallback for unmatched files — always present, never deletable.
+    public static let other = EnvKind(rawValue: "other")
+}
+
+/// Encodes as a bare string — identical wire/storage format to the enum this type
+/// replaced (RawRepresentable synthesis would produce `{"rawValue": …}`, which is why
+/// this is manual).
+extension EnvKind: Codable {
+    public init(from decoder: Decoder) throws {
+        rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }

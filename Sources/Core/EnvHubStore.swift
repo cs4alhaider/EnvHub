@@ -25,6 +25,34 @@ public enum EnvHubStore {
         return URL.applicationSupportDirectory.appending(path: "EnvHub/EnvHub.store")
     }
 
+    /// The EnvHub data directory (holds the store and the CLI↔app hand-off file).
+    public static var supportDirectory: URL {
+        storeURL.deletingLastPathComponent()
+    }
+
+    /// A tiny hand-off file the CLI writes (`envhub .`) and the app consumes on
+    /// activation to open a folder — see ``writePendingOpen(_:)`` / ``consumePendingOpen()``.
+    static var pendingOpenURL: URL {
+        supportDirectory.appending(path: "pending-open.txt")
+    }
+
+    /// CLI side of `envhub .`: record a folder for the app to open next time it
+    /// activates. Writing the *canonical* path keeps it consistent with stored projects.
+    public static func writePendingOpen(_ folder: URL) throws {
+        try? FileManager.default.createDirectory(at: supportDirectory, withIntermediateDirectories: true)
+        try ProjectStore.canonicalPath(for: folder).write(to: pendingOpenURL, atomically: true, encoding: .utf8)
+    }
+
+    /// App side of `envhub .`: read and clear any pending open request. Returns the
+    /// folder URL, or `nil` when there's nothing waiting.
+    public static func consumePendingOpen() -> URL? {
+        let url = pendingOpenURL
+        guard let path = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        try? FileManager.default.removeItem(at: url)
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : URL(filePath: trimmed)
+    }
+
     /// SwiftData's implicit location, used by EnvHub before the store moved to
     /// `storeURL` (kept only for the one-time import).
     static var legacyStoreURL: URL {
@@ -116,6 +144,22 @@ public enum EnvHubStore {
     static func migrateDefaultExclusionsIfNeeded(_ settings: AppSettings) {
         guard settings.exclusions == ScanConfig.legacyDefaultExclusions else { return }
         settings.exclusions = ScanConfig.defaultExclusions
+    }
+
+    /// Erases everything EnvHub knows (Settings → Data → Reset EnvHub): projects,
+    /// workspaces, scan folders, and preferences. Files on disk are never touched.
+    /// The settings row is recreated with defaults on next access, so the welcome
+    /// flow shows again.
+    public static func reset(in context: ModelContext) {
+        func deleteAll<T: PersistentModel>(_ type: T.Type) {
+            for record in (try? context.fetch(FetchDescriptor<T>())) ?? [] {
+                context.delete(record)
+            }
+        }
+        deleteAll(ProjectRecord.self)
+        deleteAll(WorkspaceRecord.self)
+        deleteAll(ScanFolderRecord.self)
+        deleteAll(AppSettings.self)
     }
 
     /// Upgrades a stored ruleset that is *exactly* the pre-Local/Example defaults to

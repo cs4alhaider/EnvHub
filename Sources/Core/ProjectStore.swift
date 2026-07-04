@@ -32,6 +32,14 @@ public enum ProjectStore {
         context.delete(record)
     }
 
+    /// Forgets **every** project (Settings → Data). Workspaces, scan folders, and
+    /// preferences survive; nothing on disk is touched.
+    public static func removeAll(in context: ModelContext) {
+        for record in (try? context.fetch(FetchDescriptor<ProjectRecord>())) ?? [] {
+            context.delete(record)
+        }
+    }
+
     /// Pin or unpin a project (pinned projects surface in the Pinned section).
     public static func setPinned(_ record: ProjectRecord, _ pinned: Bool) {
         record.isPinned = pinned

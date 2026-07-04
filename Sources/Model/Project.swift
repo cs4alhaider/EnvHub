@@ -24,9 +24,10 @@ public struct Project: Identifiable, Sendable, Hashable, Codable {
         self.init(id: id, name: path.lastPathComponent, path: path, files: files)
     }
 
-    /// The distinct environments present, in display order.
-    public var environments: [EnvKind] {
-        Set(files.map(\.kind)).sorted { $0.sortOrder < $1.sortOrder }
+    /// The distinct environments present, in display order (per the given catalog;
+    /// the built-in one by default).
+    public func environments(using catalog: EnvironmentCatalog = .builtin) -> [EnvKind] {
+        catalog.sorted(Set(files.map(\.kind)))
     }
 
     /// Files belonging to a given environment, sorted by filename.

@@ -46,6 +46,31 @@ public struct CryptoService: Sendable {
         try EnvCrypto.encrypt(EnvExporter.makeExport(projectName: name, files: files), password: password, params: params)
     }
 
+    /// Encrypt EVERY project's env files into one `.envenc` (Settings → Data →
+    /// Export All Variables). Listing + parsing every project happens here,
+    /// off the caller's actor; pass the user's rules/patterns so the export agrees
+    /// with what the app shows.
+    @concurrent
+    public func exportLibrary(
+        name: String,
+        projects: [Project],
+        rules: [ClassificationRule],
+        patterns: [String],
+        password: String,
+        params: ScryptParams = .default
+    ) async throws -> Data {
+        let populated = projects.map { project in
+            Project(
+                id: project.id,
+                name: project.name,
+                path: project.path,
+                files: ProjectLoader.envFiles(in: project.path, rules: rules, patterns: patterns)
+            )
+        }
+        let export = try EnvExporter.makeLibraryExport(name: name, projects: populated)
+        return try EnvCrypto.encrypt(export, password: password, params: params)
+    }
+
     /// Decrypt `.envenc` data. Throws `EnvelopeError.wrongPasswordOrCorrupted` when the
     /// password is wrong (GCM authentication), `.malformedEnvelope` for non-envenc data.
     @concurrent

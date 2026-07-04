@@ -4,22 +4,60 @@ import Foundation
 
 @Suite("Model value types")
 struct ModelTests {
-    @Test("EnvKind has six cases, ordered with titles")
-    func envKind() {
-        #expect(EnvKind.allCases.count == 6)
-        #expect(EnvKind.development.sortOrder < EnvKind.production.sortOrder)
-        #expect(EnvKind.production.sortOrder < EnvKind.local.sortOrder)
-        #expect(EnvKind.local.sortOrder < EnvKind.example.sortOrder)
-        #expect(EnvKind.production.title == "Production")
-        #expect(EnvKind.example.title == "Example")
+    @Test("Built-in catalog titles and orders the shipped environments")
+    func builtinCatalog() {
+        let catalog = EnvironmentCatalog.builtin
+        #expect(catalog.kinds.count == 6)
+        #expect(catalog.sortIndex(for: .development) < catalog.sortIndex(for: .production))
+        #expect(catalog.sortIndex(for: .production) < catalog.sortIndex(for: .local))
+        #expect(catalog.title(for: .production) == "Production")
+        #expect(catalog.title(for: .example) == "Example")
     }
 
     @Test("Only example files are safe to track in git")
     func safeToTrack() {
-        #expect(EnvKind.example.isSafeToTrack)
-        for kind in EnvKind.allCases where kind != .example {
-            #expect(!kind.isSafeToTrack)
+        let catalog = EnvironmentCatalog.builtin
+        #expect(catalog.isSafeToTrack(.example))
+        for kind in catalog.kinds where kind != .example {
+            #expect(!catalog.isSafeToTrack(kind))
         }
+    }
+
+    @Test("Custom environment: slug, title, color, ordering, and graceful fallback")
+    func customEnvironment() {
+        // A user adds "UAT" between staging and production.
+        let uat = EnvKind.slug(from: "UAT")
+        #expect(uat.rawValue == "uat")
+        #expect(EnvKind.slug(from: "Pre Prod!").rawValue == "pre-prod")
+
+        var defs = EnvironmentDefinition.defaults
+        defs.insert(EnvironmentDefinition(kind: uat, title: "UAT", color: .teal), at: 2)
+        let catalog = EnvironmentCatalog(definitions: defs)
+        #expect(catalog.title(for: uat) == "UAT")
+        #expect(catalog.color(for: uat) == .teal)
+        #expect(catalog.sortIndex(for: uat) < catalog.sortIndex(for: .production))
+
+        // A kind with no definition degrades gracefully (capitalized slug, gray, last).
+        let orphan = EnvKind(rawValue: "qa")
+        #expect(catalog.title(for: orphan) == "Qa")
+        #expect(catalog.color(for: orphan) == .gray)
+        #expect(catalog.sortIndex(for: orphan) >= catalog.definitions.count)
+    }
+
+    @Test("EnvKind encodes as a bare string (backward compatible with the old enum)")
+    func envKindCodable() throws {
+        let data = try JSONEncoder().encode(EnvKind.production)
+        #expect(String(decoding: data, as: UTF8.self) == "\"production\"")
+        #expect(try JSONDecoder().decode(EnvKind.self, from: Data("\"uat\"".utf8)) == EnvKind(rawValue: "uat"))
+    }
+
+    @Test("Catalog always contains the non-deletable Other bucket")
+    func otherAlwaysPresent() {
+        let catalog = EnvironmentCatalog(definitions: [
+            EnvironmentDefinition(kind: .production, title: "Prod", color: .red)
+        ])
+        #expect(catalog.kinds.contains(.other))
+        #expect(catalog.title(for: .other) == "Other")
     }
 
     @Test("Project defaults its name to the folder name")
@@ -35,7 +73,7 @@ struct ModelTests {
             EnvFile(path: URL(filePath: "/p/.env"), kind: .development),
         ]
         let p = Project(path: URL(filePath: "/p"), files: files)
-        #expect(p.environments == [.development, .production])
+        #expect(p.environments() == [.development, .production])
     }
 
     @Test("Default scan config carries the shipped exclusions and patterns")
