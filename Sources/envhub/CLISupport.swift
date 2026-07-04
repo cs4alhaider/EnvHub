@@ -36,6 +36,8 @@ enum CLIError: Error, CustomStringConvertible {
     case passwordMismatch
     case workspaceNotFound(String)
     case projectNotFound(String)
+    case notADirectory(String)
+    case appNotFound
 
     var description: String {
         switch self {
@@ -46,6 +48,10 @@ enum CLIError: Error, CustomStringConvertible {
             "workspace not found: \(name) (see `envhub workspace list`; create one with `envhub workspace create`)"
         case .projectNotFound(let name):
             "project not found (by path or unique name): \(name)"
+        case .notADirectory(let path):
+            "not a folder: \(path)"
+        case .appNotFound:
+            "couldn't launch the EnvHub app — build/run it once so macOS knows where it is"
         }
     }
 }

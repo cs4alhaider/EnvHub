@@ -23,7 +23,7 @@ struct List: ParsableCommand {
             return
         }
         for file in files {
-            print("\(file.fileName)  [\(file.kind.title)]")
+            print("\(file.fileName)  [\(EnvironmentCatalog.builtin.title(for: file.kind))]")
             let doc = try EnvFileService.load(file.path)
             for variable in doc.variables {
                 if keysOnly {
