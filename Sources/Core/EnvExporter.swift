@@ -6,6 +6,14 @@ public enum EnvExportError: Error, Equatable {
     case fileExists(URL)
 }
 
+extension EnvExportError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .fileExists(let url): "“\(url.lastPathComponent)” already exists."
+        }
+    }
+}
+
 /// Builds `EnvExport` payloads from files on disk and materializes imported payloads
 /// back to disk. The encryption itself lives in the `Crypto` target (`EnvCrypto`).
 public enum EnvExporter {

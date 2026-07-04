@@ -13,7 +13,7 @@ import Crypto
 /// metadata models are layered on in later milestones; this enum exposes build metadata.
 public enum Core {
     /// EnvHub marketing/build version.
-    public static let version = "0.1.0"
+    public static let version = "0.2.0"
 
     /// Human-readable module name.
     public static let moduleName = "Core"

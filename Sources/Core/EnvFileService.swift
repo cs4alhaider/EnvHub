@@ -60,14 +60,15 @@ public enum EnvFileService {
     }
 
     /// Create a new env file: blank, or seeded with the keys of an existing file
-    /// (values cleared — handy for `.env.example`). Refuses to overwrite.
+    /// (values cleared, per-key comments kept — handy for `.env.example`).
+    /// Refuses to overwrite.
     public static func create(at url: URL, copyingKeysFrom source: URL? = nil) throws {
         guard !FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) else {
             throw EnvExportError.fileExists(url)
         }
         var text = ""
         if let source, let doc = try? EnvParser.read(contentsOf: source) {
-            let cleared = doc.variables.map { EnvVar(key: $0.key, value: "") }
+            let cleared = doc.variables.map { EnvVar(key: $0.key, value: "", comment: $0.comment) }
             text = EnvParser.serialize(EnvParser.applyEdits(to: EnvDocument(lines: []), variables: cleared))
             if !text.isEmpty && !text.hasSuffix("\n") { text += "\n" }
         }

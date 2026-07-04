@@ -19,8 +19,9 @@ public enum EnvFileLister {
             options: []                                   // do NOT skip hidden — .env is a dotfile
         ) else { return [] }
 
+        let matcher = EnvFileMatcher.compile(patterns)  // compile once per listing
         return items
-            .filter { EnvFileMatcher.matches(fileName: $0.lastPathComponent, patterns: patterns) }
+            .filter { matcher.matches($0.lastPathComponent) }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
     }
 }
