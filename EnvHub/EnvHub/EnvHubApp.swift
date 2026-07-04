@@ -2,31 +2,37 @@
 //  EnvHubApp.swift
 //  EnvHub
 //
-//  Created by 16Root24 on 04/07/2026.
-//
 
 import SwiftUI
 import SwiftData
+import Core
+import Helper
 
 @main
 struct EnvHubApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+    let container: ModelContainer
 
+    init() {
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            container = try EnvHubStore.container()
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            fatalError("Failed to create the EnvHub data store: \(error)")
         }
-    }()
+    }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
+                // Inject Core's stateless services once, at the root, via the custom
+                // EnvironmentKeys defined in the Helper module.
+                .environment(\.scanService, ScanService())
+                .environment(\.cryptoService, CryptoService())
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(container)
+
+        Settings {
+            SettingsView()
+        }
+        .modelContainer(container)
     }
 }

@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E7B0FACE00000000000000A4 /* Core in Frameworks */ = {isa = PBXBuildFile; productRef = E7B0FACE00000000000000A2 /* Core */; };
+		E7B0FACE00000000000000A5 /* Helper in Frameworks */ = {isa = PBXBuildFile; productRef = E7B0FACE00000000000000A3 /* Helper */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		0AE973562FF94F7700365634 /* EnvHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EnvHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +28,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E7B0FACE00000000000000A4 /* Core in Frameworks */,
+				E7B0FACE00000000000000A5 /* Helper in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +72,8 @@
 			);
 			name = EnvHub;
 			packageProductDependencies = (
+				E7B0FACE00000000000000A2 /* Core */,
+				E7B0FACE00000000000000A3 /* Helper */,
 			);
 			productName = EnvHub;
 			productReference = 0AE973562FF94F7700365634 /* EnvHub.app */;
@@ -94,6 +103,9 @@
 			);
 			mainGroup = 0AE9734D2FF94F7700365634;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E7B0FACE00000000000000A1 /* XCLocalSwiftPackageReference ".." */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0AE973572FF94F7700365634 /* Products */;
 			projectDirPath = "";
@@ -254,7 +266,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = G69L3HCQBT;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -286,7 +298,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = G69L3HCQBT;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -331,6 +343,24 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		E7B0FACE00000000000000A1 /* XCLocalSwiftPackageReference ".." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E7B0FACE00000000000000A2 /* Core */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Core;
+		};
+		E7B0FACE00000000000000A3 /* Helper */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Helper;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0AE9734E2FF94F7700365634 /* Project object */;
 }
