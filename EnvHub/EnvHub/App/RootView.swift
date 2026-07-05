@@ -44,6 +44,11 @@ struct RootView: View {
     @State private var showQuickOpen = false
     /// Pre-filled quick-open query (only used by the ENVHUB_QUICK_OPEN test hook).
     @State private var quickOpenSeed = ""
+    @State private var showStarPrompt = false
+    // Occasional "star on GitHub" nudge, gated on real usage.
+    @AppStorage("launchCount") private var launchCount = 0
+    /// The launch number at which to next show the star prompt; ≤ 0 means never again.
+    @AppStorage("starPromptNextLaunch") private var starPromptNextLaunch = 5
     /// A clicked workspace section shows its dashboard in the detail pane; selecting
     /// any project clears it (and vice versa).
     @State private var dashboardTarget: DashboardTarget?
@@ -95,6 +100,17 @@ struct RootView: View {
         .sheet(isPresented: $showOnboarding, onDismiss: markOnboardingSeen) {
             OnboardingView()
         }
+        .sheet(isPresented: $showStarPrompt) {
+            StarPromptView { outcome in
+                switch outcome {
+                case .starred, .shared, .dontAsk:
+                    starPromptNextLaunch = -1                 // don't nudge again
+                case .notNow:
+                    starPromptNextLaunch = launchCount + 15   // ask again much later
+                }
+                showStarPrompt = false
+            }
+        }
         .overlay { quickOpenOverlay }
         .animation(.snappy(duration: 0.15), value: showQuickOpen)
         .onChange(of: selection) { _, newValue in
@@ -141,6 +157,9 @@ struct RootView: View {
             if env["ENVHUB_SHOW_ABOUT"] == "1" {
                 openWindow(id: "about")
             }
+            if env["ENVHUB_SHOW_STAR_PROMPT"] == "1" {
+                showStarPrompt = true
+            }
             if let path = env["ENVHUB_OPEN_WINDOW"], !path.isEmpty {
                 let canonical = ProjectStore.canonicalPath(for: URL(filePath: path))
                 if let match = projects.first(where: { ProjectStore.canonicalPath(for: $0.url) == canonical }) {
@@ -149,6 +168,13 @@ struct RootView: View {
             }
             // Any `envhub .` request queued before the app launched.
             consumePendingOpen()
+            // Occasional star nudge — only for real, onboarded usage (never during
+            // the test/screenshot launches, which set ENVHUB_SKIP_ONBOARDING).
+            if settings.hasSeenOnboarding, env["ENVHUB_SKIP_ONBOARDING"] == nil,
+               starPromptNextLaunch > 0, launchCount >= starPromptNextLaunch {
+                try? await Task.sleep(for: .seconds(2))   // let the window settle first
+                showStarPrompt = true
+            }
         }
         .task(id: indexKey) { await rebuildIndex() }
         // `envhub .` while the app is already running: the CLI activates us, which

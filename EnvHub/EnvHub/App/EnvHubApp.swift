@@ -18,6 +18,9 @@ struct EnvHubApp: App {
         } catch {
             fatalError("Failed to create the EnvHub data store: \(error)")
         }
+        // Count launches once per process (drives the occasional star prompt).
+        let defaults = UserDefaults.standard
+        defaults.set(defaults.integer(forKey: "launchCount") + 1, forKey: "launchCount")
     }
 
     var body: some Scene {
