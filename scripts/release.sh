@@ -28,11 +28,31 @@ PROJECT="$ROOT/EnvHub/EnvHub.xcodeproj"
 SCHEME="EnvHub"
 APP_NAME="EnvHub"
 SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application}"
-TEAM_ID="${TEAM_ID:-G69L3HCQBT}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-envhub-notary}"
 VERSION="${VERSION:-$(xcodebuild -project "$PROJECT" -scheme "$SCHEME" -showBuildSettings 2>/dev/null \
   | awk -F' = ' '/ MARKETING_VERSION = /{print $2; exit}')}"
 VERSION="${VERSION:-0.2.0}"
+
+# ---- Preflight: the Developer ID cert and notary profile must exist ----------
+# Find the installed Developer ID Application certificate line, e.g.
+#   1) ABC…  "Developer ID Application: Name (TEAMID)"
+DEVID_LINE="$(security find-identity -v -p codesigning 2>/dev/null | grep "Developer ID Application" | head -1 || true)"
+if [ -z "$DEVID_LINE" ]; then
+  echo "✗ No 'Developer ID Application' certificate found in your keychain." >&2
+  echo "  Create one in Xcode → Settings → Accounts → Manage Certificates → + →" >&2
+  echo "  Developer ID Application. See scripts/NOTARIZE-SETUP.md." >&2
+  exit 1
+fi
+# The team is the (TEAMID) at the end of the cert's common name — use it for signing
+# and export, so whichever team your Developer ID cert belongs to is the one we ship
+# under. Override with TEAM_ID=… if you have more than one.
+TEAM_ID="${TEAM_ID:-$(sed -E 's/.*\(([A-Z0-9]{10})\)".*/\1/' <<<"$DEVID_LINE")}"
+if ! xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
+  echo "✗ No notarytool keychain profile named '$NOTARY_PROFILE'." >&2
+  echo "  Create it with: xcrun notarytool store-credentials $NOTARY_PROFILE …" >&2
+  echo "  See scripts/NOTARIZE-SETUP.md." >&2
+  exit 1
+fi
 
 BUILD="$ROOT/build"
 DIST="$ROOT/dist"

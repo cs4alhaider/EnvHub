@@ -18,9 +18,10 @@ Easiest, via Xcode:
    security find-identity -v -p codesigning | grep "Developer ID Application"
    ```
 
-> Note: the project's team is currently **G69L3HCQBT**. If your Developer ID cert is
-> under a different team, set `TEAM_ID` when running the script (and update
-> `DEVELOPMENT_TEAM` in the Xcode project if you want the default to match).
+> The release script **auto-detects the team from your Developer ID certificate**, so
+> whichever team you create the cert under is the one EnvHub ships under — you don't
+> need to match the project's `DEVELOPMENT_TEAM`. (Override with `TEAM_ID=…` only if you
+> hold Developer ID certs for more than one team.)
 
 ## 2. Notary credentials (a keychain profile)
 
