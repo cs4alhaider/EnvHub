@@ -115,37 +115,38 @@ your Mac.
   locations (Desktop / Documents / Downloads) — that's macOS asking, not EnvHub phoning
   home. Grant it in *System Settings → Privacy & Security → Full Disk Access*.
 
-## Build & run
+## Install
+
+### Homebrew
+
+```sh
+# The CLI
+brew install cs4alhaider/tap/envhub
+
+# The app (installs the bundled CLI too) — coming with the next signed build
+brew install --cask cs4alhaider/tap/envhub-app
+```
+
+The CLI formula builds from source, so it needs **Xcode 26**. The app cask ships a
+notarized build (see [`scripts/`](scripts/NOTARIZE-SETUP.md) for the release pipeline).
+
+### Build from source
 
 ```sh
 git clone https://github.com/cs4alhaider/EnvHub.git
 cd EnvHub
-```
 
-### App
+# App: open in Xcode and Run (⌘R)
+open EnvHub/EnvHub.xcodeproj
+# …or: xcodebuild -project EnvHub/EnvHub.xcodeproj -scheme EnvHub -destination 'platform=macOS' build
 
-```sh
-open EnvHub/EnvHub.xcodeproj      # then Run (⌘R) in Xcode
-# …or from the command line:
-xcodebuild -project EnvHub/EnvHub.xcodeproj -scheme EnvHub -destination 'platform=macOS' build
-```
-
-### CLI
-
-```sh
+# CLI
 swift run envhub --help
 swift build -c release            # optimized build (scrypt is much faster)
-cp .build/release/envhub /usr/local/bin/    # optional: put it on your PATH
-```
 
-### Tests
-
-```sh
+# Tests
 swift test                        # 87 UI-free tests across all modules
 ```
-
-> **Homebrew** distribution is planned — a tap with formula/cask templates and the release
-> checklist live in [`docs/distribution/`](docs/distribution/HOMEBREW.md).
 
 ## CLI reference
 
