@@ -34,10 +34,11 @@ struct EnvHubApp: App {
         // work regardless of the sidebar/toolbar state.
         .commands { AppCommands() }
 
-        // One window per project, keyed by ID (double-click a sidebar row or use
-        // "Open in New Window"). Re-opening the same project focuses its window.
-        WindowGroup("Project", id: "project", for: UUID.self) { $projectID in
-            ProjectWindowView(projectID: projectID)
+        // A project window, keyed by ProjectWindowRef: `.saved` re-uses one window per
+        // project (double-click a sidebar row or "Open in New Window"); `.folder` is an
+        // ad-hoc window for a folder opened with `envhub .`.
+        WindowGroup("Project", id: "project", for: ProjectWindowRef.self) { $ref in
+            ProjectWindowView(ref: ref)
                 .environment(\.scanService, ScanService())
                 .environment(\.cryptoService, CryptoService())
         }

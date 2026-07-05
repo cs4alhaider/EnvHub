@@ -27,17 +27,24 @@ Check availability with `envhub --help`; build from source with
    overwrite without `--force`); `workspace` subcommands modify only EnvHub's own
    metadata store, never files on disk.
 
-## Open a folder in the app
+## Add or open a folder in the app
 
 ```sh
-envhub .                 # open the current folder in the EnvHub app (add it as a project)
-envhub ~/code/my-app     # any path; works even if the folder has no .env files yet
-envhub open ./my-app     # explicit form of the same thing
+envhub add .             # add the current folder to EnvHub (it appears in the sidebar)
+envhub add ~/code/app    # any path; works even if the folder has no .env files yet
+
+envhub .                 # open the folder in a project window WITHOUT adding it
+envhub open ~/code/app   # explicit form of the same thing (a bare path = `open`)
 ```
 
-A bare path is shorthand for `envhub open <path>` (like `code .`). The app comes to
-the front with that project selected; if the folder has no env files, its detail view
-offers a create-a-file flow where you pick the type.
+- `envhub add <path>` **persists** the project — it shows up in the app's sidebar and
+  the shared store.
+- `envhub <path>` / `envhub open <path>` opens a one-off project window for a quick
+  look and does **not** add it. (If the folder already is a project, it re-uses that
+  project's window.)
+
+Either way the app comes to the front; if the folder has no env files, the window's
+detail view offers a create-a-file flow where you pick the type.
 
 ## The data store
 

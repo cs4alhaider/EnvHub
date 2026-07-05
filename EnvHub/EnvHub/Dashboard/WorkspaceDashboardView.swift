@@ -53,13 +53,13 @@ struct WorkspaceDashboardView: View {
                                 kinds: kindsByProject[project.id] ?? []
                             )
                             // Double-click → own window; single click → in this pane.
-                            .simultaneousGesture(TapGesture(count: 2).onEnded {
-                                openWindow(id: "project", value: project.id)
-                            })
+                            .onDoubleClick {
+                                openWindow(id: "project", value: ProjectWindowRef.saved(project.id))
+                            }
                             .onTapGesture { onOpenProject(project.id) }
                             .contextMenu {
                                 Button("Open in New Window", systemImage: "macwindow.badge.plus") {
-                                    openWindow(id: "project", value: project.id)
+                                    openWindow(id: "project", value: ProjectWindowRef.saved(project.id))
                                 }
                             }
                         }

@@ -175,7 +175,7 @@ struct SidebarView: View {
                 .draggable(project.id.uuidString)
                 // Double-click opens the project in its own window — via an AppKit
                 // recognizer that leaves single-click selection untouched.
-                .onDoubleClick { openWindow(id: "project", value: project.id) }
+                .onDoubleClick { openWindow(id: "project", value: ProjectWindowRef.saved(project.id)) }
         }
     }
 
@@ -302,7 +302,7 @@ struct SidebarView: View {
                 targets.count == 1 ? "Open in New Window" : "Open in New Windows",
                 systemImage: "macwindow.badge.plus"
             ) {
-                for project in targets { openWindow(id: "project", value: project.id) }
+                for project in targets { openWindow(id: "project", value: ProjectWindowRef.saved(project.id)) }
             }
             Divider()
             Button(allPinned ? "Unpin" : "Pin", systemImage: allPinned ? "pin.slash" : "pin") {

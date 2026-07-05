@@ -30,27 +30,55 @@ public enum EnvHubStore {
         storeURL.deletingLastPathComponent()
     }
 
-    /// A tiny hand-off file the CLI writes (`envhub .`) and the app consumes on
-    /// activation to open a folder — see ``writePendingOpen(_:)`` / ``consumePendingOpen()``.
+    /// What the CLI is asking the app to do with a folder.
+    public enum PendingAction: String, Sendable {
+        /// `envhub add <path>` — add the folder as a project (persist + select).
+        case addProject = "add"
+        /// `envhub <path>` — open a project window for the folder without adding it.
+        case openWindow = "window"
+    }
+
+    /// A CLI → app request read on activation.
+    public struct PendingOpen: Sendable {
+        public let action: PendingAction
+        public let url: URL
+    }
+
+    /// A tiny hand-off file the CLI writes (`envhub .` / `envhub add .`) and the app
+    /// consumes on activation — see ``writePendingOpen(_:action:)`` / ``consumePendingOpen()``.
     static var pendingOpenURL: URL {
         supportDirectory.appending(path: "pending-open.txt")
     }
 
-    /// CLI side of `envhub .`: record a folder for the app to open next time it
-    /// activates. Writing the *canonical* path keeps it consistent with stored projects.
-    public static func writePendingOpen(_ folder: URL) throws {
+    /// CLI side: record a folder + action for the app to handle next time it
+    /// activates. The file is two lines — action, then the *canonical* path (which
+    /// keeps it consistent with stored projects).
+    public static func writePendingOpen(_ folder: URL, action: PendingAction) throws {
         try? FileManager.default.createDirectory(at: supportDirectory, withIntermediateDirectories: true)
-        try ProjectStore.canonicalPath(for: folder).write(to: pendingOpenURL, atomically: true, encoding: .utf8)
+        let contents = "\(action.rawValue)\n\(ProjectStore.canonicalPath(for: folder))"
+        try contents.write(to: pendingOpenURL, atomically: true, encoding: .utf8)
     }
 
-    /// App side of `envhub .`: read and clear any pending open request. Returns the
-    /// folder URL, or `nil` when there's nothing waiting.
-    public static func consumePendingOpen() -> URL? {
+    /// App side: read and clear any pending request (action + folder URL), or `nil`
+    /// when nothing is waiting. A single-line file (older format) defaults to
+    /// `addProject` for backward compatibility.
+    public static func consumePendingOpen() -> PendingOpen? {
         let url = pendingOpenURL
-        guard let path = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        guard let raw = try? String(contentsOf: url, encoding: .utf8) else { return nil }
         try? FileManager.default.removeItem(at: url)
-        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : URL(filePath: trimmed)
+
+        let lines = raw.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        let action: PendingAction
+        let pathLine: String
+        if lines.count >= 2, let parsed = PendingAction(rawValue: lines[0].trimmingCharacters(in: .whitespaces)) {
+            action = parsed
+            pathLine = lines[1]
+        } else {
+            action = .addProject
+            pathLine = lines.first ?? ""
+        }
+        let trimmed = pathLine.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : PendingOpen(action: action, url: URL(filePath: trimmed))
     }
 
     /// SwiftData's implicit location, used by EnvHub before the store moved to

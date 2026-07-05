@@ -11,12 +11,12 @@ struct EnvHub: AsyncParsableCommand {
         commandName: "envhub",
         abstract: "Discover and manage every .env file on your machine.",
         version: Core.version,
-        subcommands: [Scan.self, List.self, Get.self, Export.self, Import.self, Workspace.self, Open.self, Store.self]
+        subcommands: [Scan.self, List.self, Get.self, Export.self, Import.self, Workspace.self, Add.self, Open.self, Store.self]
     )
 
     /// Names ArgumentParser already routes to (subcommands + built-ins).
     private static let reservedNames: Set<String> = [
-        "scan", "list", "get", "export", "import", "workspace", "open", "store",
+        "scan", "list", "get", "export", "import", "workspace", "add", "open", "store",
         "help", "-h", "--help", "--version",
     ]
 

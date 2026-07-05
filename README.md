@@ -62,8 +62,9 @@ your Mac.
 - **🧯 Faithful save** — writes a `.bak` backup first, then rewrites the file **preserving
   comments and blank lines**, keeping untouched lines byte-for-byte identical.
 - **↔️ Diff** — read-only, side-by-side comparison of two environments.
-- **⌨️ CLI** — `scan`, `list`, `get`, `export`, `import`, `workspace`, `open`, and `store`
-  on the exact same core, sharing the same data as the app.
+- **⌨️ CLI** — `scan`, `list`, `get`, `export`, `import`, `workspace`, `add`, `open`, and
+  `store` on the exact same core, sharing the same data as the app. `envhub add .` adds a
+  folder as a project; `envhub .` opens it in a window without adding it.
 
 ## Screenshots
 
@@ -149,7 +150,11 @@ swift test                        # 87 UI-free tests across all modules
 ## CLI reference
 
 ```sh
-# Open the current folder in the app (like `code .`); works even with no .env yet
+# Add the current folder to EnvHub (it appears in the sidebar)
+envhub add .
+envhub add ~/code/my-app
+
+# Open a folder in a project window WITHOUT adding it (a quick look)
 envhub .
 envhub ~/code/my-app
 

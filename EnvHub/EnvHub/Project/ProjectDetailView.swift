@@ -11,7 +11,8 @@ import SwiftData
 import Core
 
 struct ProjectDetailView: View {
-    let project: ProjectRecord
+    /// The folder to edit — a saved project or an ad-hoc one (see `ProjectRef`).
+    let project: ProjectRef
     @Environment(\.modelContext) private var context
     @Environment(\.environmentCatalog) private var catalog
 

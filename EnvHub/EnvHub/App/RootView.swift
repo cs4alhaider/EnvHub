@@ -144,7 +144,7 @@ struct RootView: View {
             if let path = env["ENVHUB_OPEN_WINDOW"], !path.isEmpty {
                 let canonical = ProjectStore.canonicalPath(for: URL(filePath: path))
                 if let match = projects.first(where: { ProjectStore.canonicalPath(for: $0.url) == canonical }) {
-                    openWindow(id: "project", value: match.id)
+                    openWindow(id: "project", value: ProjectWindowRef.saved(match.id))
                 }
             }
             // Any `envhub .` request queued before the app launched.
@@ -158,18 +158,31 @@ struct RootView: View {
         }
     }
 
-    /// Add + select whatever folder `envhub .` queued (creating the project if new).
-    /// A folder with no `.env` files still opens — its detail view offers the
+    /// Handle a folder queued by the CLI (`envhub add` / `envhub .`).
+    /// - `addProject`: add it to the sidebar (if new) and select it.
+    /// - `openWindow`: open a project window for it *without* adding — re-using the
+    ///   saved project's window when the folder already is one.
+    /// A folder with no `.env` files works either way; the detail view offers the
     /// create-a-file flow with type presets.
     private func consumePendingOpen() {
-        guard let folder = EnvHubStore.consumePendingOpen() else { return }
-        let canonical = ProjectStore.canonicalPath(for: folder)
-        let record = ProjectStore.addProject(at: folder, to: context)
-            ?? projects.first { ProjectStore.canonicalPath(for: $0.url) == canonical }
-        if let record {
-            dashboardTarget = nil
-            searchText = ""
-            selection = [record.id]
+        guard let pending = EnvHubStore.consumePendingOpen() else { return }
+        let canonical = ProjectStore.canonicalPath(for: pending.url)
+        let existing = projects.first { ProjectStore.canonicalPath(for: $0.url) == canonical }
+
+        switch pending.action {
+        case .addProject:
+            let record = ProjectStore.addProject(at: pending.url, to: context) ?? existing
+            if let record {
+                dashboardTarget = nil
+                searchText = ""
+                selection = [record.id]
+            }
+        case .openWindow:
+            if let existing {
+                openWindow(id: "project", value: ProjectWindowRef.saved(existing.id))
+            } else {
+                openWindow(id: "project", value: ProjectWindowRef.folder(canonical))
+            }
         }
     }
 
@@ -209,7 +222,7 @@ struct RootView: View {
             }
         } else if selection.count == 1, let id = selection.first,
                   let project = projects.first(where: { $0.id == id }) {
-            ProjectDetailView(project: project)
+            ProjectDetailView(project: ProjectRef(project))
         } else if selection.count > 1 {
             ContentUnavailableView {
                 Label("\(selection.count) Projects Selected", systemImage: "square.stack.3d.up")
