@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1024px; height: 1024px; background: transparent; }
+  .canvas {
+    width: 1024px; height: 1024px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* macOS-style rounded square with ~9% padding around it */
+  .tile {
+    width: 840px; height: 840px;
+    border-radius: 188px;               /* superellipse-ish */
+    background: linear-gradient(155deg, #4A8CFF 0%, #2F6BF0 42%, #3A4ED8 100%);
+    position: relative;
+    box-shadow:
+      0 40px 90px rgba(20, 40, 120, 0.45),
+      inset 0 3px 0 rgba(255,255,255,0.35),
+      inset 0 -10px 30px rgba(10, 25, 90, 0.35);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  /* soft top-left sheen */
+  .tile::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(120% 90% at 22% 12%, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%);
+  }
+  /* faint dotted "environment grid" texture */
+  .tile::after {
+    content: ""; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.10) 2.5px, transparent 2.6px);
+    background-size: 54px 54px;
+    background-position: 12px 12px;
+    mask-image: linear-gradient(160deg, black, transparent 70%);
+    -webkit-mask-image: linear-gradient(160deg, black, transparent 70%);
+  }
+  .key { position: relative; z-index: 2; filter: drop-shadow(0 12px 22px rgba(10,25,90,0.4)); }
+</style>
+</head>
+<body>
+  <div class="canvas">
+    <div class="tile">
+      <!-- horizontal key: round bow with a hole, shaft with two teeth -->
+      <svg class="key" width="500" height="500" viewBox="0 0 100 100" fill="none">
+        <g fill="#ffffff">
+          <!-- bow -->
+          <circle cx="30" cy="50" r="20"/>
+          <!-- shaft -->
+          <rect x="46" y="44.5" width="40" height="11" rx="3.2"/>
+          <!-- teeth -->
+          <rect x="70" y="55.5" width="6" height="12" rx="2"/>
+          <rect x="82" y="55.5" width="6" height="16" rx="2"/>
+        </g>
+        <!-- hole in the bow -->
+        <circle cx="30" cy="50" r="7.5" fill="#2F6BF0"/>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>

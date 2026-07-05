@@ -1,97 +1,118 @@
-# EnvHub
+<p align="center">
+  <img src="docs/screenshots/header.png" alt="EnvHub — every .env file on your machine, in one window" width="100%">
+</p>
 
-[![Platform](https://img.shields.io/badge/platform-macOS%2026-blue)](#requirements)
-[![Swift](https://img.shields.io/badge/swift-6-orange)](#architecture)
-[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-green)](LICENSE)
+<p align="center">
+  <a href="#requirements"><img src="https://img.shields.io/badge/macOS-26%20Tahoe-black?logo=apple&logoColor=white" alt="macOS 26"></a>
+  <a href="#architecture"><img src="https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white" alt="Swift 6"></a>
+  <a href="#build--run"><img src="https://img.shields.io/badge/SwiftUI-native-2F6BF0" alt="SwiftUI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0"></a>
+  <img src="https://img.shields.io/badge/telemetry-none-brightgreen" alt="No telemetry">
+</p>
 
-A native **macOS 26 (Tahoe)** app — plus a companion CLI — that puts every `.env` file
-on your machine in one window. A structured key/value editor (with an optional raw
-"developer" view), Development / Staging / Production tabs, cross-project search, a
-git-tracking guard, a cancellable filesystem scanner, side-by-side environment diffing,
-and password-encrypted export/import.
-
-Open source, **build-and-run from source**. No backend, no accounts, **no telemetry** —
-everything is local. Your `.env` files on disk stay the single source of truth for
-variable *values*; the app persists only its own metadata (via SwiftData). Inspired by
-[Envly](https://www.envly.app), but original and open source.
+<p align="center">
+  A native <b>macOS</b> app — plus a companion CLI — that puts every <code>.env</code> file on your
+  machine in one window.<br>
+  Structured editing, workspaces, cross-project search, a git-leak guard, and
+  password-encrypted sharing.<br>
+  <b>Open source, local-only, no accounts, no telemetry.</b>
+</p>
 
 ---
 
-## Screenshots
-
-<!-- TODO before publishing: add screenshots to docs/screenshots/ and uncomment.
-     Suggested shots (light or dark, ~1400px wide):
-       docs/screenshots/editor.png   — the structured editor with masked values + tabs
-       docs/screenshots/search.png   — cross-project search results
-       docs/screenshots/scan.png     — the scanner sheet mid-scan
-       docs/screenshots/diff.png     — side-by-side environment diff
-
 <p align="center">
-  <img src="docs/screenshots/editor.png" alt="EnvHub editor with environment tabs and masked values" width="720">
+  <img src="docs/screenshots/editor.png" alt="EnvHub main window: workspace sidebar, environment tabs, and the structured editor" width="90%">
 </p>
-<p align="center">
-  <img src="docs/screenshots/search.png" alt="Cross-project search" width="720">
-</p>
--->
 
-*Screenshots coming soon.*
+## Why EnvHub?
+
+Your `.env` files are scattered across dozens of projects, hold your most sensitive
+secrets, and are one careless `git add` away from a leak. EnvHub gathers them into a
+single, native window: a real editor instead of a text file, environments at a glance,
+search across every project, and a warning the moment a secret is tracked by git.
+
+And because it reads secrets across your whole machine, it's **open source on purpose** —
+you can read exactly what it does, build it yourself, and verify that nothing ever leaves
+your Mac.
 
 ## Features
 
-- **Projects sidebar with workspaces** — every folder with `.env*` files, added manually
-  or by scanning, organized into **Pinned**, your own **workspace sections**, and
-  **Others** (each with a project count). Create/rename/delete workspaces, **drag
-  projects onto a section header** to move them, or **multi-select** projects to move
-  or remove them in bulk. Removing a project only forgets it in the app; it never
-  deletes files on disk.
-- **Structured editor** — a Key / Value / Comment / status table with inline edit and
-  add/delete rows, plus a **raw "developer" view** to edit or copy the whole file as
-  plain text. The **Comment column** is bound to the `# comment` line directly above
-  each key: it shows it, edits it, adds it, or removes it — untouched lines stay
-  byte-identical.
-- **Cross-project search** — type `gemini` and see every project whose keys, values,
-  filenames, or names match (e.g. `GEMINI_API_KEY`), grouped by project.
-- **Git-tracking guard** — warns when a `.env` file is tracked by git and offers
-  **Unstage & Ignore** (`git rm --cached` + add to `.gitignore`); manage `.gitignore`
-  per file. **Example files are exempt** — `.env.example` is meant to be committed, so
-  it never triggers the warning (and New File defaults it to *not* be gitignored).
-- **Create env files** — make a new `.env`, `.env.production`, `.env.example`, or a
-  custom name in any project (even one with no env files yet), optionally seeding keys
-  from an existing file.
-- **Pin & Finder** — pin projects to the top; right-click to Reveal / Open in Finder or
-  copy the path. Per-file variable counts on the tabs.
-- **Masking** — values are dots by default; reveal per-row (click the eye) or all at once.
-  Safe to screen-share.
-- **Inline validation** — non-blocking markers for duplicate keys, empty keys, and
-  malformed lines (missing `=`, unbalanced quotes).
-- **Environment tabs** — Development / Staging / Production / Local / Example / Other,
-  driven by your own **editable, ordered regex rules** (first match wins; e.g.
-  `.env.production.example` is an *Example*, `.env.development.local` is *Local*).
-- **Faithful save** — writes a `.bak` backup of the current file first, then rewrites the
-  real file **preserving comments and blank lines**, keeping untouched lines byte-stable.
-- **Scanner** — pick folders (remembered) and optionally deep-scan recursively. The
-  walk is **parallel** (many directories enumerated concurrently) and skips the trees
-  that make home-directory scans slow (`~/Library`, `node_modules`, package-manager
-  caches — the list is editable). **Stop & Review** ends a long scan early and shows
-  everything found so far. Results that are **already in your sidebar are marked
-  "Added" and skipped**, so re-scanning never duplicates projects, and accepted
-  projects can land directly in a workspace.
-- **Diff** — read-only side-by-side comparison of two environments: same / different /
-  only-on-one-side.
-- **Encrypted export / import** — `.envenc` files using **AES-256-GCM** with an **scrypt**
-  key derivation. Export a single file or a whole project; import materializes the
-  file(s) wherever you choose. Wrong passwords fail cleanly via the GCM auth tag.
-- **CLI** — `scan`, `list`, `get`, `export`, `import`, and `workspace` on the exact
-  same core. The CLI opens the **same store as the app**, so `envhub workspace …`
-  lists, creates, and organizes the very sections you see in the sidebar.
+- **📁 Projects & workspaces** — every folder with `.env*` files, grouped into **Pinned**,
+  your own **workspaces**, and **Others**. Collapsible sections (remembered across
+  launches), drag-and-drop between them, multi-select to move or remove in bulk, and a
+  per-workspace **dashboard**. Single-click to open, **double-click for a separate window**.
+- **✏️ A real editor** — a Key / Value / **Comment** / status table with inline editing,
+  plus a raw "developer" text view. The Comment column is bound to the `# comment` line
+  above each key. Values are **masked** by default (safe to screen-share); reveal per-row
+  or all at once.
+- **🏷️ Custom environments** — Development / Staging / Production / Local / Example ship by
+  default, but you can **add your own** (UAT, pre-prod, …), rename them, set a **color**,
+  and mark which are safe to commit. Files map to them via your own **editable regex rules**.
+- **🔎 Search everything** — type `gemini` and see every project whose keys, values,
+  filenames, or names match, grouped by project. Or hit **⇧⌘O** for an Xcode-style
+  **Quick Open** popup and jump straight to a project.
+- **🛡️ Git-leak guard** — when a `.env` file is tracked by git, EnvHub warns you and can
+  **unstage + gitignore** it in one click. Example/template files are exempt.
+- **🔐 Encrypted sharing** — export a file, a project, or your **whole library** as a
+  password-protected `.envenc` (**AES-256-GCM** + **scrypt**). Import recreates the files
+  wherever you choose. Wrong passwords fail cleanly.
+- **⚡ Fast, safe scanner** — discover `.env` files across chosen folders. The walk is
+  **parallel**, skips caches (`~/Library`, `node_modules`, …), can **stop early to review**,
+  and never re-imports what you already have.
+- **🧯 Faithful save** — writes a `.bak` backup first, then rewrites the file **preserving
+  comments and blank lines**, keeping untouched lines byte-for-byte identical.
+- **↔️ Diff** — read-only, side-by-side comparison of two environments.
+- **⌨️ CLI** — `scan`, `list`, `get`, `export`, `import`, `workspace`, `open`, and `store`
+  on the exact same core, sharing the same data as the app.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/dashboard.png" alt="Workspace dashboard" width="100%"><br>
+      <sub><b>Workspace dashboard</b> — click a section header for an overview of its projects.</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/quick-open.png" alt="Quick Open search" width="100%"><br>
+      <sub><b>Quick Open (⇧⌘O)</b> — search keys, values, and files across every project.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/environments.png" alt="Custom environments editor" width="86%"><br>
+      <sub><b>Custom environments</b> — name, color, and safe-to-commit, per environment.</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/onboarding.png" alt="Onboarding" width="100%"><br>
+      <sub><b>Welcome</b> — a quick tour on first launch.</sub>
+    </td>
+  </tr>
+</table>
+
+## Use cases
+
+- **"Where did I put that key?"** — ⇧⌘O, type `stripe`, jump to the project that has it.
+- **Audit a secret across projects** — search a key name and see every project, environment,
+  and file it appears in.
+- **Stop a leak before it ships** — the git guard flags a tracked `.env` and gitignores it
+  in one click.
+- **Onboard a teammate** — make a committed `.env.example` from a real file (keys, no
+  values), or send them an encrypted `.envenc` and share the password out-of-band.
+- **Move a machine** — `export` your whole library to one `.envenc`, restore it on the new
+  Mac with `import`.
+- **Organize a monorepo** — group frontend/backend/infra projects into workspaces; open
+  each in its own window.
+- **Script it** — `envhub .` to open the current folder in the app, `envhub get KEY --mask`
+  in a shell, `envhub store` to back up the database.
 
 ## Requirements
 
 - **macOS 26 (Tahoe)** and **Xcode 26+** (Swift 6.x).
 - EnvHub runs **without the App Sandbox** so it can read `.env` files across your home
-  directory. macOS may prompt for **Full Disk Access** the first time you scan protected
-  locations (Desktop / Documents / Downloads); grant it in
-  *System Settings → Privacy & Security → Full Disk Access*.
+  directory. macOS may ask for **Full Disk Access** the first time you scan protected
+  locations (Desktop / Documents / Downloads) — that's macOS asking, not EnvHub phoning
+  home. Grant it in *System Settings → Privacy & Security → Full Disk Access*.
 
 ## Build & run
 
@@ -103,7 +124,7 @@ cd EnvHub
 ### App
 
 ```sh
-open EnvHub/EnvHub.xcodeproj    # then Run (⌘R) in Xcode
+open EnvHub/EnvHub.xcodeproj      # then Run (⌘R) in Xcode
 # …or from the command line:
 xcodebuild -project EnvHub/EnvHub.xcodeproj -scheme EnvHub -destination 'platform=macOS' build
 ```
@@ -112,83 +133,33 @@ xcodebuild -project EnvHub/EnvHub.xcodeproj -scheme EnvHub -destination 'platfor
 
 ```sh
 swift run envhub --help
-swift build -c release          # optimized build (scrypt is much faster)
-cp .build/release/envhub /usr/local/bin/   # optional: put it on your PATH
+swift build -c release            # optimized build (scrypt is much faster)
+cp .build/release/envhub /usr/local/bin/    # optional: put it on your PATH
 ```
 
-### Tests (UI-free, fast)
+### Tests
 
 ```sh
-swift test                      # 80 tests across all modules
+swift test                        # 87 UI-free tests across all modules
 ```
 
-## Architecture
-
-One SwiftPM package (`EnvHubKit`) at the repo root holds **all** UI-free logic, the CLI,
-and the tests. A thin SwiftUI app (`EnvHub/EnvHub.xcodeproj`) links it via a local
-package reference (`../`) and consumes the `Core` and `Helper` products.
-
-```
-Package.swift                 EnvHubKit — libraries + CLI + tests
-Sources/
-  Model/        pure Sendable value types: EnvDocument/EnvVar/EnvKind, rules, diff,
-                export payloads, masking — depends on nothing
-  Parser/       .env read/write: parsing, serialization, edit reconciliation
-                (comment/blank-line preserving, byte-stable untouched lines)  → Model
-  Scanner/      cancellable filesystem discovery, glob matching, exclusions,
-                throttled progress                                            → Model
-  Classifier/   ordered regex rules → environment                             → Model
-  Crypto/       AES-256-GCM (EnvCrypto) + in-house scrypt (RFC 7914),
-                .envenc envelope                                              → Model
-  Core/         the facade the app & CLI consume: services (scan/crypto),
-                file save/create, git, search index, project metadata,
-                SwiftData metadata store
-  Helper/       SwiftUI @Environment injection of Core services (UI glue;
-                the only package target importing SwiftUI)                    → Core
-  envhub/       CLI executable — one file per subcommand                      → Core
-Tests/          Swift Testing suites per module (UI-free): 80 tests
-EnvHub/         SwiftUI macOS app (links Core + Helper), organized by feature:
-  App/  Sidebar/  Project/  Editor/  Search/  Scan/  Diff/  Sharing/
-  Settings/  Support/
-```
-
-Design principles:
-
-- **All business logic lives in the package.** The app target is views + view-models
-  only. Concern modules depend only on `Model`; `Core` is the single facade; `Helper`
-  is the only package target that imports SwiftUI, so the CLI never links a UI
-  framework.
-- **Swift 6 strict concurrency, "approachable" style.** The app uses default
-  `MainActor` isolation; the package enables `NonisolatedNonsendingByDefault`. Work
-  that must leave the caller's actor — filesystem walks, `git` spawns, scrypt, bulk
-  parsing — is explicitly marked `@concurrent` (`ScanService`, `CryptoService`,
-  `GitService`, `SearchIndex.build`, `ProjectMetadata.load`), so views simply `await`
-  and stay responsive. No `Task.detached`, no dispatch queues.
-- **`.env` files are the source of truth for values.** SwiftData stores only app state
-  (projects, workspaces, scan folders, exclusions, classification rules, preferences) —
-  in one **shared store** (`~/Library/Application Support/EnvHub/EnvHub.store`) that the
-  app and CLI both open, with projects deduplicated by canonical path (symlinks
-  resolved, trailing slashes ignored).
-- **Search is index-based.** Projects are read once into an in-memory `SearchIndex`
-  (built off-main, with precomputed lowercase haystacks); per-keystroke search does no
-  I/O and no re-lowercasing. The index also feeds the sidebar's file-count badges.
-- **Git calls are batched.** Per-project status is three `git` spawns total
-  (`rev-parse`, `ls-files`, `check-ignore --stdin`) regardless of file count.
-- **Crypto is dependency-free and auditable** — scrypt is implemented in-house on
-  CryptoKit's HMAC/AES primitives and validated against the official RFC 7914 test
-  vectors; AES-256-GCM comes from CryptoKit.
+> **Homebrew** distribution is planned — a tap with formula/cask templates and the release
+> checklist live in [`docs/distribution/`](docs/distribution/HOMEBREW.md).
 
 ## CLI reference
 
 ```sh
+# Open the current folder in the app (like `code .`); works even with no .env yet
+envhub .
+envhub ~/code/my-app
+
 # Discover .env files, grouped by folder (‑‑deep to recurse)
 envhub scan ~/Developer --deep
 
 # List a project's files and variables (‑‑mask to hide values, ‑‑keys-only for keys)
-envhub list ./my-app
 envhub list ./my-app --mask
 
-# Print one key's value (searches a file or a project folder)
+# Print one key's value (from a file, or searching a project folder)
 envhub get DATABASE_URL --file ./my-app/.env
 envhub get API_KEY --project ./my-app --mask
 
@@ -202,20 +173,63 @@ envhub import secrets.envenc --into ./restored --force
 # Workspaces — the same sidebar sections the app shows (shared store)
 envhub workspace list
 envhub workspace create Backend
-envhub workspace move ./my-app Backend      # by path, or unique project name
-envhub workspace sort Backend --by name     # name | path | date
-envhub workspace rename Backend Services
-envhub workspace delete Services            # projects move back to Others
+envhub workspace move ./my-app Backend
+envhub workspace sort Backend --by name
+
+# Back up or inspect the shared data store
+envhub store
+cp "$(envhub store)" ~/envhub-backup.store
 ```
 
-The store lives at `~/Library/Application Support/EnvHub/EnvHub.store`; set
-`ENVHUB_STORE=<path>` to point the app or CLI at a different one (useful for testing).
+The app and CLI share one store at `~/Library/Application Support/EnvHub/EnvHub.store`;
+set `ENVHUB_STORE=<path>` to point either at a different one.
+
+### For AI agents
+
+[`skills/envhub-cli/`](skills/envhub-cli/SKILL.md) is a ready-made agent skill that teaches
+coding agents to use the CLI safely (masking rules, password handling, workspace
+semantics). Drop the folder into your agent's skills directory — e.g.
+`.claude/skills/envhub-cli/` for Claude Code.
+
+## Architecture
+
+One SwiftPM package (`EnvHubKit`) at the repo root holds **all** UI-free logic, the CLI,
+and the tests. A thin SwiftUI app links it via a local package reference and consumes the
+`Core` and `Helper` products.
+
+```
+Package.swift                 EnvHubKit — libraries + CLI + tests
+Sources/
+  Model/        pure Sendable value types (EnvDocument, EnvKind + catalog, diff, …)
+  Parser/       .env read/write — comment-preserving, byte-stable          → Model
+  Scanner/      parallel, cancellable filesystem discovery                 → Model
+  Classifier/   ordered regex rules → environment                          → Model
+  Crypto/       AES-256-GCM + in-house scrypt (RFC 7914), .envenc          → Model
+  Core/         facade + services + shared SwiftData store (app & CLI)
+  Helper/       SwiftUI @Environment injection of Core services            → Core
+  envhub/       CLI — one file per subcommand                              → Core
+Tests/          Swift Testing suites per module (UI-free)
+EnvHub/         SwiftUI macOS app (links Core + Helper)
+```
+
+**Design principles**
+
+- **All business logic lives in the package** — the app target is views + view-models only.
+  Concern modules depend only on `Model`; `Core` is the single facade; `Helper` is the only
+  package target that imports SwiftUI, so the CLI never links a UI framework.
+- **Swift 6 strict concurrency.** Work that must leave the caller's actor — filesystem
+  walks, `git` spawns, scrypt, bulk parsing — is explicitly `@concurrent`, so views simply
+  `await` and stay responsive.
+- **Your `.env` files are the source of truth.** SwiftData stores only app state (projects,
+  workspaces, rules, preferences) in one shared store the app and CLI both open.
+- **Crypto is dependency-free and auditable** — scrypt is implemented in-house on CryptoKit
+  primitives and validated against the official RFC 7914 vectors.
 
 ## How saving works
 
-A **Save** writes `<file>.bak` (a copy of the current on-disk file) *before* overwriting
-the real file. Edits are reconciled onto the original document so comments, blank lines,
-and untouched entries are written back byte-for-byte; only changed/added/removed lines are
+A **Save** writes `<file>.bak` (a copy of the current on-disk file) *before* overwriting the
+real file. Edits are reconciled onto the original document so comments, blank lines, and
+untouched entries are written back byte-for-byte; only changed/added/removed lines are
 rewritten.
 
 ## The `.envenc` format
@@ -225,7 +239,7 @@ A `.envenc` file is a JSON envelope:
 ```json
 {
   "version": 1,
-  "type": "single | project",
+  "type": "single | project | library",
   "kdf": "scrypt",
   "kdfParams": { "N": 32768, "r": 8, "p": 1 },
   "salt": "base64",
@@ -235,15 +249,15 @@ A `.envenc` file is a JSON envelope:
 ```
 
 The plaintext payload (before encryption) is JSON describing the file(s) — each with its
-key/value pairs and raw text for faithful materialization. The key is `scrypt(password,
-salt)`; the payload is sealed with AES-256-GCM. `ciphertext` is the GCM ciphertext with
-the 16-byte auth tag appended.
+key/value pairs and raw text for faithful materialization. The key is
+`scrypt(password, salt)`; the payload is sealed with AES-256-GCM, with the 16-byte GCM auth
+tag appended to the ciphertext.
 
 ## Security notes
 
 - No network access, no telemetry, no accounts. Nothing leaves your machine.
-- Working `.env` files are stored as-is (no at-rest encryption) — encryption applies only
-  to explicit `.envenc` export.
+- Working `.env` files are stored as-is — encryption applies only to explicit `.envenc`
+  export.
 - Lost `.envenc` passwords are unrecoverable by design.
 
 ## Keyboard shortcuts
@@ -251,26 +265,33 @@ the 16-byte auth tag appended.
 | Action | Shortcut |
 | --- | --- |
 | Add project | ⌘N |
+| New workspace | ⇧⌘N |
+| Search across projects (Quick Open) | ⇧⌘O |
 | Scan for `.env` files | ⇧⌘F |
 | Import `.envenc` | ⌘I |
 | Save file | ⌘S |
 | Settings | ⌘, |
 
-## Roadmap
-
-- **Cloud-provider import** (Vercel / Netlify / Railway / Fly): pull env vars straight
-  from a provider into a local file using your own credentials, nothing routed through a
-  server. The `EnvExport` / import layer is designed to accept a provider *source*
-  without a rewrite.
-
-Ideas and issues are welcome — see below.
-
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) — the short version: business logic goes in the
-Swift package with tests, the app stays a thin SwiftUI layer, and `swift test` +
-`xcodebuild` must pass.
+Issues and pull requests are genuinely welcome — bugs, ideas, or an environment type EnvHub
+doesn't have yet. See [CONTRIBUTING.md](CONTRIBUTING.md); the short version: business logic
+goes in the Swift package with tests, the app stays a thin SwiftUI layer, and `swift test`
++ `xcodebuild` must pass.
+
+## Author
+
+<img src="docs/screenshots/about.png" alt="About EnvHub" align="right" width="300">
+
+Built by **Abdullah Alhaider** —
+[alhaider.net](https://alhaider.net) ·
+[GitHub @cs4alhaider](https://github.com/cs4alhaider) ·
+[X @cs4alhaider](https://x.com/cs4alhaider)
+
+EnvHub is free and open source because it handles your secrets — you should be able to
+read exactly what it does. If it's useful to you, a ⭐ on GitHub is appreciated, and
+issues or pull requests even more so.
 
 ## License
 
-[GPL-3.0](LICENSE) © [cs4alhaider](https://github.com/cs4alhaider).
+[GPL-3.0](LICENSE) © Abdullah Alhaider
