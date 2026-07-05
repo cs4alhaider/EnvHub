@@ -14,3 +14,7 @@ xcuserdata/
 
 # EnvHub — never commit real secrets or local backups
 *.env.bak
+
+# Release artifacts
+/build/
+/dist/
