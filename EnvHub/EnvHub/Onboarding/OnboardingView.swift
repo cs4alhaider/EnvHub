@@ -15,7 +15,8 @@ struct OnboardingView: View {
     // Initial page overridable via ENVHUB_ONBOARDING_PAGE (screenshot hook).
     @State private var page = Int(ProcessInfo.processInfo.environment["ENVHUB_ONBOARDING_PAGE"] ?? "") ?? 0
 
-    private let pageCount = 4
+    private let pageCount = 5
+    private let repoURL = URL(string: "https://github.com/cs4alhaider/EnvHub")!
 
     var body: some View {
         VStack(spacing: 0) {
@@ -24,7 +25,8 @@ struct OnboardingView: View {
                 case 0: welcomePage
                 case 1: privacyPage
                 case 2: organizePage
-                default: getStartedPage
+                case 3: getStartedPage
+                default: supportPage
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -145,19 +147,61 @@ struct OnboardingView: View {
             OnboardingFeatureRow(
                 symbol: "terminal",
                 title: "There's a CLI too",
-                detail: "envhub scan, list, get, export, import, workspace — and `envhub .` to open a folder here. It shares the same data as the app."
+                detail: "envhub scan, list, get, export, import, workspace, add — and `envhub .` to open a folder here. It shares the same data as the app."
+            )
+        }
+    }
+
+    private var supportPage: some View {
+        OnboardingPage(
+            symbol: "star.fill",
+            tint: .yellow,
+            title: "Free & Open Source",
+            subtitle: "A star on GitHub or a share helps others find EnvHub."
+        ) {
+            // The star/share card — the ask, front and centre.
+            VStack(spacing: 14) {
+                HStack(spacing: 14) {
+                    Image("GitHubMark")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 40, height: 40)
+                        .foregroundStyle(.primary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Star EnvHub on GitHub").fontWeight(.semibold)
+                        Text("A star helps more developers discover it.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                HStack(spacing: 10) {
+                    Link(destination: repoURL) {
+                        Label("Star on GitHub", systemImage: "star.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .controlSize(.large)
+                    .buttonStyle(.borderedProminent)
+
+                    ShareLink(item: repoURL) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .controlSize(.large)
+                }
+            }
+            .padding(16)
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.quaternary.opacity(0.5)))
+
+            OnboardingFeatureRow(
+                symbol: "ant",
+                title: "Bugs, ideas, missing features?",
+                detail: "Open an issue — contributions are welcome, whether it's a fix or an environment type EnvHub doesn't have yet."
             )
 
-            Divider().padding(.vertical, 2)
-
             VStack(alignment: .leading, spacing: 6) {
-                Text("Built by Abdullah Alhaider — free and open source.")
-                    .font(.callout).fontWeight(.medium)
-                Text("Have a bug, an idea, or need an environment type EnvHub doesn't have? Contributions and issues are welcome.")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Text("Built by Abdullah Alhaider").font(.callout).fontWeight(.medium)
                 HStack(spacing: 14) {
-                    Link("GitHub", destination: URL(string: "https://github.com/cs4alhaider/EnvHub")!)
                     Link("Open an Issue", destination: URL(string: "https://github.com/cs4alhaider/EnvHub/issues/new")!)
                     Link("alhaider.net", destination: URL(string: "https://alhaider.net")!)
                     Link("@cs4alhaider", destination: URL(string: "https://x.com/cs4alhaider")!)

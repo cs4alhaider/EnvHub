@@ -74,18 +74,18 @@ struct EnvFileEditor: View {
                 Button {
                     model.revealAll.toggle()
                 } label: {
-                    Image(systemName: model.revealAll ? "eye.slash" : "eye")
+                    iconLabel(model.revealAll ? "eye.slash" : "eye")
                 }
                 .help(model.revealAll ? "Hide all values" : "Reveal all values")
 
-                Button { selection = [model.addRow()] } label: { Image(systemName: "plus") }
+                Button { selection = [model.addRow()] } label: { iconLabel("plus") }
                     .help("Add variable")
 
                 Button(role: .destructive) {
                     model.deleteRows(selection)
                     selection = []
                 } label: {
-                    Image(systemName: "minus")
+                    iconLabel("minus")
                 }
                 .disabled(selection.isEmpty)
                 .help("Delete selected")
@@ -101,6 +101,14 @@ struct EnvFileEditor: View {
         }
         .padding(8)
         .background(.bar)
+    }
+
+    /// A fixed-size icon so the eye / + / − buttons render at identical widths. The
+    /// "minus" glyph is wider and shorter than "plus", which otherwise gives its
+    /// button a different size and padding.
+    private func iconLabel(_ systemName: String) -> some View {
+        Image(systemName: systemName)
+            .frame(width: 14, height: 14)
     }
 
     // MARK: Raw developer view

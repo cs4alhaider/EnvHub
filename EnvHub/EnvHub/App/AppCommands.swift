@@ -40,6 +40,10 @@ struct AppCommands: Commands {
                 .disabled(actions == nil)
         }
 
+        CommandGroup(after: .systemServices) {
+            Button("Install Command Line Tool…") { CommandLineTool.installWithFeedback() }
+        }
+
         CommandGroup(after: .help) {
             Divider()
             Button("Welcome to EnvHub…") { actions?.showWelcome() }
