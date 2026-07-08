@@ -31,7 +31,7 @@ SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-envhub-notary}"
 VERSION="${VERSION:-$(xcodebuild -project "$PROJECT" -scheme "$SCHEME" -showBuildSettings 2>/dev/null \
   | awk -F' = ' '/ MARKETING_VERSION = /{print $2; exit}')}"
-VERSION="${VERSION:-0.2.0}"
+VERSION="${VERSION:-0.0.1}"
 
 # ---- Preflight: the Developer ID cert and notary profile must exist ----------
 # Find the installed Developer ID Application certificate line, e.g.

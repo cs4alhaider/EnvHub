@@ -2,7 +2,7 @@
 # Requires a Developer-ID-signed, notarized, stapled EnvHub.app zipped on the
 # GitHub Release (see HOMEBREW.md §2).
 cask "envhub-app" do
-  version "0.2.0"
+  version "0.0.1"
   sha256 "REPLACE_WITH_ZIP_SHA256"
 
   url "https://github.com/cs4alhaider/EnvHub/releases/download/v#{version}/EnvHub-#{version}.zip"

@@ -25,7 +25,7 @@ Releases) while the code stays here. Revisit a repo split at 1.0 (criteria below
 
 ## What "independent publishing" looks like (this plan)
 
-- **Tags on this repo** are the release unit: `v0.2.0`, `v0.3.0`, … One tag versions
+- **Tags on this repo** are the release unit: `v0.0.1`, `v0.3.0`, … One tag versions
   the app, the CLI, and the store schema together (`Core.version` mirrors it).
 - **Each release attaches a CLI artifact**: `envhub-<version>-macos-arm64.tar.gz` —
   a release-built, Developer-ID-signed, notarized binary + `LICENSE` + the agent

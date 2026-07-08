@@ -4,7 +4,7 @@
 class Envhub < Formula
   desc "Discover and manage every .env file on your machine"
   homepage "https://github.com/cs4alhaider/EnvHub"
-  url "https://github.com/cs4alhaider/EnvHub/archive/refs/tags/v0.2.0.tar.gz"
+  url "https://github.com/cs4alhaider/EnvHub/archive/refs/tags/v0.0.1.tar.gz"
   sha256 "REPLACE_WITH_TARBALL_SHA256"
   license "GPL-3.0-only"
   head "https://github.com/cs4alhaider/EnvHub.git", branch: "main"
@@ -28,7 +28,7 @@ end
 # class Envhub < Formula
 #   desc "Discover and manage every .env file on your machine"
 #   homepage "https://github.com/cs4alhaider/EnvHub"
-#   url "https://github.com/cs4alhaider/EnvHub/releases/download/v0.2.0/envhub-0.2.0-macos-arm64.zip"
+#   url "https://github.com/cs4alhaider/EnvHub/releases/download/v0.0.1/envhub-0.0.1-macos-arm64.zip"
 #   sha256 "REPLACE_WITH_ZIP_SHA256"
 #   license "GPL-3.0-only"
 #
