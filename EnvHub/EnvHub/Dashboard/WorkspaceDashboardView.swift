@@ -52,12 +52,19 @@ struct WorkspaceDashboardView: View {
                                 variableCount: variableCounts[project.id] ?? 0,
                                 kinds: kindsByProject[project.id] ?? []
                             )
-                            // Double-click → own window; single click → in this pane.
+                            // Double-click → own window (⌘: tab); single click → this pane.
                             .onDoubleClick {
-                                openWindow(id: "project", value: ProjectWindowRef.saved(project.id))
+                                if NSEvent.modifierFlags.contains(.command) {
+                                    WindowTabbing.openTab(selecting: project.id, using: openWindow)
+                                } else {
+                                    openWindow(id: "project", value: ProjectWindowRef.saved(project.id))
+                                }
                             }
                             .onTapGesture { onOpenProject(project.id) }
                             .contextMenu {
+                                Button("Open in New Tab", systemImage: "plus.square.on.square") {
+                                    WindowTabbing.openTab(selecting: project.id, using: openWindow)
+                                }
                                 Button("Open in New Window", systemImage: "macwindow.badge.plus") {
                                     openWindow(id: "project", value: ProjectWindowRef.saved(project.id))
                                 }
@@ -160,11 +167,12 @@ private struct ProjectCard: View {
                     .foregroundStyle(.tertiary)
                     .opacity(hovered ? 1 : 0.4)
             }
-            Text(project.path)
+            Text(PathDisplay.homeRelative(project.path))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .truncationMode(.middle)
+                .truncationMode(.head)
+                .help(project.path)
             HStack(spacing: 10) {
                 Label("\(fileCount)", systemImage: "doc.text")
                 Label("\(variableCount)", systemImage: "list.bullet")

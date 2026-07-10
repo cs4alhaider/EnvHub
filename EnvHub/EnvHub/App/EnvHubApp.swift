@@ -24,7 +24,9 @@ struct EnvHubApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        // The id lets "Open in New Tab" spawn additional main windows programmatically
+        // (each becomes a tab of the requesting window — see WindowTabbing).
+        WindowGroup(id: "main") {
             RootView()
                 // Inject Core's stateless services once, at the root, via the custom
                 // EnvironmentKeys defined in the Helper module.

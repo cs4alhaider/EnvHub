@@ -173,9 +173,16 @@ struct SidebarView: View {
             ProjectRow(project: project, fileCount: fileCounts[project.id] ?? 0)
                 .tag(project.id)
                 .draggable(project.id.uuidString)
-                // Double-click opens the project in its own window — via an AppKit
-                // recognizer that leaves single-click selection untouched.
-                .onDoubleClick { openWindow(id: "project", value: ProjectWindowRef.saved(project.id)) }
+                // Double-click opens the project in its own window (⌘-double-click:
+                // a tab, like Finder) — via an AppKit recognizer that leaves
+                // single-click selection untouched.
+                .onDoubleClick {
+                    if NSEvent.modifierFlags.contains(.command) {
+                        WindowTabbing.openTab(selecting: project.id, using: openWindow)
+                    } else {
+                        openWindow(id: "project", value: ProjectWindowRef.saved(project.id))
+                    }
+                }
         }
     }
 
@@ -299,6 +306,12 @@ struct SidebarView: View {
             let allPinned = targets.allSatisfy(\.isPinned)
 
             Button(
+                targets.count == 1 ? "Open in New Tab" : "Open in New Tabs",
+                systemImage: "plus.square.on.square"
+            ) {
+                for project in targets { WindowTabbing.openTab(selecting: project.id, using: openWindow) }
+            }
+            Button(
                 targets.count == 1 ? "Open in New Window" : "Open in New Windows",
                 systemImage: "macwindow.badge.plus"
             ) {
@@ -338,7 +351,6 @@ struct SidebarView: View {
             if let single {
                 Divider()
                 Button("Reveal in Finder", systemImage: "magnifyingglass") { FinderActions.reveal(single.url) }
-                Button("Open in Finder", systemImage: "folder") { FinderActions.open(single.url) }
                 Button("Copy Path", systemImage: "doc.on.doc") { FinderActions.copyPath(single.url) }
             }
             Divider()

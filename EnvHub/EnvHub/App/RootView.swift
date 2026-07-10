@@ -23,6 +23,12 @@ struct ImportItem: Identifiable {
     let url: URL
 }
 
+/// One-shot gate for the launch-time work in RootView's `.task` — it must not repeat
+/// in the extra RootView instances created for tabs (see comment at the call site).
+private enum LaunchHookGate {
+    static var didRun = false
+}
+
 struct RootView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.openSettings) private var openSettings
@@ -90,6 +96,14 @@ struct RootView: View {
             detail(query: query, hits: hits)
         }
         .frame(minWidth: 860, minHeight: 560)
+        // "Open in New Tab" spawns this window: adopt it into the requester's tab
+        // group, then show the requested project.
+        .background(WindowAccessor { window in
+            guard let window, let id = WindowTabbing.adoptPendingTab(window) else { return }
+            dashboardTarget = nil
+            searchText = ""
+            selection = [id]
+        })
         .searchable(text: $searchText, placement: .sidebar, prompt: "Search projects & keys")
         .toolbar { toolbarContent }
         .environment(\.appActions, actions)
@@ -117,6 +131,12 @@ struct RootView: View {
             if !newValue.isEmpty { dashboardTarget = nil }
         }
         .task {
+            // Launch setup + ENVHUB_* hooks read the process environment, so they must
+            // run once per process: RootView now has an instance per tab ("Open in
+            // New Tab"), and re-running them there would re-show onboarding or the
+            // star prompt — or, for the tab hooks, spawn new tabs in a loop.
+            guard !LaunchHookGate.didRun else { return }
+            LaunchHookGate.didRun = true
             let settings = EnvHubStore.settings(in: context)
             let env = ProcessInfo.processInfo.environment
             // Testing/demo hooks (used by headless smoke tests and screenshot runs):
@@ -164,6 +184,16 @@ struct RootView: View {
                 let canonical = ProjectStore.canonicalPath(for: URL(filePath: path))
                 if let match = projects.first(where: { ProjectStore.canonicalPath(for: $0.url) == canonical }) {
                     openWindow(id: "project", value: ProjectWindowRef.saved(match.id))
+                }
+            }
+            // Colon-separated paths → tabs on the main window (screenshots/smoke tests).
+            if let paths = env["ENVHUB_OPEN_TAB"], !paths.isEmpty {
+                try? await Task.sleep(for: .milliseconds(400))   // let the window become key
+                for part in paths.split(separator: ":") {
+                    let canonical = ProjectStore.canonicalPath(for: URL(filePath: String(part)))
+                    if let match = projects.first(where: { ProjectStore.canonicalPath(for: $0.url) == canonical }) {
+                        WindowTabbing.openTab(selecting: match.id, using: openWindow)
+                    }
                 }
             }
             // Any `envhub .` request queued before the app launched.

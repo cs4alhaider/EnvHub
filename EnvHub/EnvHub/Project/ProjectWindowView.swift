@@ -21,6 +21,8 @@ struct ProjectWindowView: View {
         content
             // This is a separate window scene, so it needs the catalog injected too.
             .environment(\.environmentCatalog, settingsRows.first?.environmentCatalog ?? .builtin)
+            // Group standalone project windows for Merge All Windows.
+            .background(WindowAccessor { WindowTabbing.markProjectWindow($0) })
     }
 
     @ViewBuilder
@@ -38,7 +40,7 @@ struct ProjectWindowView: View {
             ProjectDetailView(project: ProjectRef(folder: URL(filePath: path)))
                 .frame(minWidth: 620, minHeight: 420)
         case nil:
-            removed
+            empty
         }
     }
 
@@ -48,6 +50,17 @@ struct ProjectWindowView: View {
             "Project Removed",
             systemImage: "folder.badge.questionmark",
             description: Text("This project is no longer in EnvHub.")
+        )
+        .frame(minWidth: 420, minHeight: 300)
+        .navigationTitle("EnvHub")
+    }
+
+    /// A window/tab opened with no project — e.g. the tab bar's "+" button.
+    private var empty: some View {
+        ContentUnavailableView(
+            "No Project Open",
+            systemImage: "folder",
+            description: Text("Double-click a project in the EnvHub window, or right-click it and choose “Open in New Tab”.")
         )
         .frame(minWidth: 420, minHeight: 300)
         .navigationTitle("EnvHub")

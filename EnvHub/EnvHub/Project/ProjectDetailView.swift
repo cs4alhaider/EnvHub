@@ -94,7 +94,6 @@ struct ProjectDetailView: View {
         ToolbarItem {
             Menu {
                 Button("Reveal in Finder", systemImage: "magnifyingglass") { FinderActions.reveal(project.url) }
-                Button("Open in Finder", systemImage: "folder") { FinderActions.open(project.url) }
                 Button("Copy Path", systemImage: "doc.on.doc") { FinderActions.copyPath(project.url) }
                 if let url = selectedFile, metadata.gitInfo.isRepo {
                     Divider()

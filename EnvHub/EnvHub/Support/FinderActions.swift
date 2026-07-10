@@ -2,7 +2,7 @@
 //  FinderActions.swift
 //  EnvHub
 //
-//  Small helpers for revealing / opening folders in Finder and copying paths.
+//  Small helpers for revealing files/folders in Finder and copying paths.
 //
 
 import AppKit
@@ -10,10 +10,6 @@ import AppKit
 enum FinderActions {
     static func reveal(_ url: URL) {
         NSWorkspace.shared.activateFileViewerSelecting([url])
-    }
-
-    static func open(_ url: URL) {
-        NSWorkspace.shared.open(url)
     }
 
     static func copyPath(_ url: URL) {
