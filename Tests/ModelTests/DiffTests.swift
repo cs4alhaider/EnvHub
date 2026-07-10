@@ -36,6 +36,63 @@ struct DiffTests {
         #expect(diff.map(\.key) == ["A", "B"])
     }
 
+    @Test("Changes: added / removed / value edit / comment edit, in file order")
+    func changes() {
+        let old = [
+            EnvVar(key: "KEEP", value: "1"),
+            EnvVar(key: "EDIT", value: "a", comment: "old note"),
+            EnvVar(key: "GONE", value: "x"),
+        ]
+        let new = [
+            EnvVar(key: "KEEP", value: "1"),
+            EnvVar(key: "EDIT", value: "b", comment: "new note"),
+            EnvVar(key: "FRESH", value: "y"),
+        ]
+        let changes = EnvDiff.changes(from: old, to: new)
+        #expect(changes.map(\.key) == ["EDIT", "FRESH", "GONE"])
+
+        let edit = changes[0]
+        #expect(edit.kind == .modified)
+        #expect(edit.valueChanged && edit.commentChanged)
+        #expect(edit.oldValue == "a" && edit.newValue == "b")
+        #expect(edit.oldComment == "old note" && edit.newComment == "new note")
+
+        #expect(changes[1].kind == .added)
+        #expect(changes[1].newValue == "y")
+        #expect(changes[2].kind == .removed)
+        #expect(changes[2].oldValue == "x")
+    }
+
+    @Test("Comment-only edits count as modified")
+    func commentOnlyChange() {
+        let changes = EnvDiff.changes(
+            from: [EnvVar(key: "A", value: "1", comment: "before")],
+            to: [EnvVar(key: "A", value: "1", comment: "after")]
+        )
+        #expect(changes.count == 1)
+        #expect(changes[0].kind == .modified)
+        #expect(!changes[0].valueChanged)
+        #expect(changes[0].commentChanged)
+    }
+
+    @Test("No edits → no changes; duplicates collapse last-wins; empty keys ignored")
+    func changesEdgeCases() {
+        #expect(EnvDiff.changes(
+            from: [EnvVar(key: "A", value: "1")],
+            to: [EnvVar(key: "A", value: "1")]
+        ).isEmpty)
+
+        let dup = EnvDiff.changes(
+            from: [EnvVar(key: "A", value: "1")],
+            to: [EnvVar(key: "A", value: "stale"), EnvVar(key: "A", value: "2")]
+        )
+        #expect(dup.count == 1)
+        #expect(dup[0].kind == .modified)
+        #expect(dup[0].newValue == "2")
+
+        #expect(EnvDiff.changes(from: [], to: [EnvVar(key: "", value: "ignored")]).isEmpty)
+    }
+
     @Test("Summary counts each category")
     func summary() {
         let diff = EnvDiff.compare(

@@ -30,6 +30,9 @@ final class EnvFileEditorModel {
     var loadError: String?
     var saveError: String?
 
+    /// On-disk details (created/modified/size/backup) for the info popover.
+    private(set) var fileInfo: EnvFileInfo?
+
     enum RowStatus: Equatable {
         case ok
         case warning(String)
@@ -123,6 +126,19 @@ final class EnvFileEditorModel {
         rawText = savedText
     }
 
+    func refreshFileInfo() async {
+        fileInfo = await EnvFileInfo.load(for: fileURL)
+    }
+
+    /// What Save would change, key by key — shown in the review sheet. In raw mode
+    /// the text is parsed first, so the review reflects the same variables the save
+    /// will produce. An empty result while `isDirty` means only formatting, ordering,
+    /// or standalone comments changed.
+    func pendingChanges() -> [EnvChange] {
+        let newRows = mode == .raw ? EnvFileService.parse(rawText).variables : rows
+        return EnvDiff.changes(from: savedRows, to: newRows)
+    }
+
     /// Backup-on-save, then write. Reconciliation keeps untouched lines byte-stable.
     func save() {
         do {
@@ -141,6 +157,7 @@ final class EnvFileEditorModel {
                 rawText = savedText
             }
             saveError = nil
+            Task { await refreshFileInfo() }
         } catch {
             saveError = error.localizedDescription
         }

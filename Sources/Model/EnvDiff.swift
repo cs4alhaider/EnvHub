@@ -24,6 +24,46 @@ public struct EnvDiffEntry: Sendable, Hashable, Identifiable {
     }
 }
 
+/// One key-level change between a saved file and pending edits (the save review).
+/// A `.modified` change may carry a value edit, a comment edit, or both — check
+/// `valueChanged` / `commentChanged`.
+public struct EnvChange: Sendable, Hashable, Identifiable {
+    public enum Kind: String, Sendable, Hashable {
+        case added
+        case removed
+        case modified
+    }
+
+    public var kind: Kind
+    public var key: String
+    public var oldValue: String?
+    public var newValue: String?
+    public var oldComment: String?
+    public var newComment: String?
+
+    /// Keys are unique within one change set (duplicates collapse last-wins).
+    public var id: String { key }
+
+    public var valueChanged: Bool { oldValue != newValue }
+    public var commentChanged: Bool { oldComment != newComment }
+
+    public init(
+        kind: Kind,
+        key: String,
+        oldValue: String? = nil,
+        newValue: String? = nil,
+        oldComment: String? = nil,
+        newComment: String? = nil
+    ) {
+        self.kind = kind
+        self.key = key
+        self.oldValue = oldValue
+        self.newValue = newValue
+        self.oldComment = oldComment
+        self.newComment = newComment
+    }
+}
+
 /// Computes a side-by-side diff of two environments' variables. Read-only.
 public enum EnvDiff {
     /// Compare two variable lists. On duplicate keys within a side, the last value wins
@@ -47,6 +87,47 @@ public enum EnvDiff {
             }
             return EnvDiffEntry(key: key, leftValue: l, rightValue: r, state: state)
         }
+    }
+
+    /// Key-level changes from `old` to `new` — what the save-review sheet shows.
+    /// Duplicate keys collapse last-wins (matching `compare`); rows with empty keys
+    /// are ignored. Added and modified keys keep the new list's order; removed keys
+    /// follow in the old list's order.
+    public static func changes(from old: [EnvVar], to new: [EnvVar]) -> [EnvChange] {
+        var oldByKey: [String: EnvVar] = [:]
+        for v in old where !v.key.isEmpty { oldByKey[v.key] = v }
+        var newByKey: [String: EnvVar] = [:]
+        for v in new where !v.key.isEmpty { newByKey[v.key] = v }
+
+        var changes: [EnvChange] = []
+        var seen: Set<String> = []
+        for v in new where !v.key.isEmpty && !seen.contains(v.key) {
+            seen.insert(v.key)
+            guard let current = newByKey[v.key] else { continue }
+            if let previous = oldByKey[v.key] {
+                if previous.value != current.value || previous.comment != current.comment {
+                    changes.append(EnvChange(
+                        kind: .modified, key: v.key,
+                        oldValue: previous.value, newValue: current.value,
+                        oldComment: previous.comment, newComment: current.comment
+                    ))
+                }
+            } else {
+                changes.append(EnvChange(
+                    kind: .added, key: v.key,
+                    newValue: current.value, newComment: current.comment
+                ))
+            }
+        }
+        for v in old where !v.key.isEmpty && newByKey[v.key] == nil && !seen.contains(v.key) {
+            seen.insert(v.key)
+            let previous = oldByKey[v.key]!
+            changes.append(EnvChange(
+                kind: .removed, key: v.key,
+                oldValue: previous.value, oldComment: previous.comment
+            ))
+        }
+        return changes
     }
 
     /// Summary counts for a computed diff.

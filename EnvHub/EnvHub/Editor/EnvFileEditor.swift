@@ -3,7 +3,8 @@
 //  EnvHub
 //
 //  Structured key/value editor with masking + inline validation, plus a raw
-//  "developer" text view. Backup-then-write Save.
+//  "developer" text view. Save opens a review sheet (what will change, local-only
+//  note) before the backup-then-write.
 //
 
 import SwiftUI
@@ -13,6 +14,8 @@ import Core
 struct EnvFileEditor: View {
     @Bindable var model: EnvFileEditorModel
     @State private var selection: Set<UUID> = []
+    @State private var showFileInfo = false
+    @State private var showSaveReview = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -36,6 +39,19 @@ struct EnvFileEditor: View {
                 notice("Save failed: \(error)", systemImage: "xmark.octagon.fill", tint: .red)
             }
         }
+        .task(id: model.fileURL) {
+            await model.refreshFileInfo()
+            await runScreenshotHooks()
+        }
+        .sheet(isPresented: $showSaveReview) {
+            SaveReviewSheet(
+                fileName: model.fileURL.lastPathComponent,
+                backupName: EnvFileService.backupURL(for: model.fileURL).lastPathComponent,
+                changes: model.pendingChanges()
+            ) {
+                model.save()
+            }
+        }
     }
 
     // MARK: Control bar
@@ -48,6 +64,18 @@ struct EnvFileEditor: View {
                 .font(.caption).foregroundStyle(.secondary)
             if model.isDirty {
                 Circle().fill(.orange).frame(width: 7, height: 7).help("Unsaved changes")
+            }
+
+            Button {
+                showFileInfo = true
+            } label: {
+                Image(systemName: "info.circle")
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(.secondary)
+            .help("File details")
+            .popover(isPresented: $showFileInfo, arrowEdge: .bottom) {
+                FileInfoPopover(model: model)
             }
 
             // Mode toggle + Copy are anchored on the LEFT (before the Spacer) so they
@@ -94,7 +122,9 @@ struct EnvFileEditor: View {
             Button("Revert") { model.revert() }
                 .disabled(!model.isDirty)
 
-            Button("Save") { model.save() }
+            // Save always routes through the review sheet — the actual write happens
+            // when the user confirms there.
+            Button("Save") { showSaveReview = true }
                 .keyboardShortcut("s", modifiers: .command)
                 .disabled(!model.isDirty)
                 .buttonStyle(.borderedProminent)
@@ -202,6 +232,37 @@ struct EnvFileEditor: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
                 .help(message)
+        }
+    }
+
+    // MARK: Launch hooks (screenshots / smoke tests)
+
+    /// `ENVHUB_SHOW_FILE_INFO=1` opens the details popover; `ENVHUB_SHOW_SAVE_REVIEW=1`
+    /// seeds demo edits and opens the save-review sheet. UI scripting can't reach
+    /// these states on locked-down machines, same rationale as the other ENVHUB_* hooks.
+    private func runScreenshotHooks() async {
+        let env = ProcessInfo.processInfo.environment
+        if env["ENVHUB_SHOW_FILE_INFO"] == "1" {
+            try? await Task.sleep(for: .milliseconds(500))
+            showFileInfo = true
+        } else if env["ENVHUB_SHOW_SAVE_REVIEW"] == "1" {
+            seedDemoEdits()
+            try? await Task.sleep(for: .milliseconds(500))
+            showSaveReview = true
+        }
+    }
+
+    private func seedDemoEdits() {
+        guard !model.rows.isEmpty else { return }
+        model.rows[0].value += "-rotated"
+        model.rows[0].comment = "Rotated 2026-07"
+        if model.rows.count > 2 {
+            model.deleteRows([model.rows[model.rows.count - 1].id])
+        }
+        let id = model.addRow()
+        if let i = model.rows.firstIndex(where: { $0.id == id }) {
+            model.rows[i].key = "FEATURE_FLAG_CHECKOUT"
+            model.rows[i].value = "true"
         }
     }
 
