@@ -23,11 +23,14 @@ struct ProjectRow: View {
                     }
                     Text(project.name).lineLimit(1)
                 }
-                Text(project.path)
+                // Home-relative + head-truncated: the tail of the path (the folders
+                // that identify the project) stays visible however narrow the sidebar.
+                Text(PathDisplay.homeRelative(project.path))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                    .truncationMode(.middle)
+                    .truncationMode(.head)
+                    .help(project.path)
             }
             Spacer(minLength: 4)
             if fileCount > 0 {

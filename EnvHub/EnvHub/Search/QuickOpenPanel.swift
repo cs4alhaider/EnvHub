@@ -178,9 +178,10 @@ struct QuickOpenPanel: View {
             case .project(let project):
                 Image(systemName: "folder.fill").foregroundStyle(.tint)
                 Text(project.name).fontWeight(.medium)
-                Text(project.path)
+                Text(PathDisplay.homeRelative(project.path))
                     .font(.caption).foregroundStyle(.secondary)
-                    .lineLimit(1).truncationMode(.middle)
+                    .lineLimit(1).truncationMode(.head)
+                    .help(project.path)
                 Spacer(minLength: 8)
             case .hit(let hit):
                 Circle().fill(catalog.tint(for: hit.kind)).frame(width: 7, height: 7)
