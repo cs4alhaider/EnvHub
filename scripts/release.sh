@@ -62,10 +62,10 @@ rm -rf "$BUILD" "$DIST"; mkdir -p "$BUILD" "$DIST"
 
 echo "▸ EnvHub $VERSION  ·  team $TEAM_ID  ·  identity: $SIGN_IDENTITY"
 
-# ---- 1. Build the CLI --------------------------------------------------------
+# ---- 1. Build the CLI (its own package at cli/) --------------------------------
 echo "▸ Building the envhub CLI (release)…"
-swift build -c release --product envhub --package-path "$ROOT"
-CLI_BIN="$ROOT/.build/release/envhub"
+swift build -c release --product envhub --package-path "$ROOT/cli"
+CLI_BIN="$ROOT/cli/.build/release/envhub"
 
 # ---- 2. Archive the app ------------------------------------------------------
 echo "▸ Archiving the app…"
@@ -94,8 +94,11 @@ echo "▸ Embedding the CLI in the app bundle…"
 mkdir -p "$APP/Contents/Helpers"
 cp "$CLI_BIN" "$APP/Contents/Helpers/envhub"
 codesign --force --options runtime --timestamp -s "$SIGN_IDENTITY" "$APP/Contents/Helpers/envhub"
-# Re-seal the app so its signature covers the newly-added helper.
-codesign --force --options runtime --timestamp -s "$SIGN_IDENTITY" "$APP"
+# Re-seal the app so its signature covers the newly-added helper. The Developer ID
+# entitlements pin the app-group store location shared with the CLI.
+codesign --force --options runtime --timestamp \
+  --entitlements "$ROOT/EnvHub/EnvHub/EnvHub-DeveloperID.entitlements" \
+  -s "$SIGN_IDENTITY" "$APP"
 codesign --verify --deep --strict "$APP" && echo "  ✓ app signature valid"
 
 # ---- 5. Notarize + staple the app --------------------------------------------

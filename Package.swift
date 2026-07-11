@@ -1,10 +1,12 @@
 // swift-tools-version: 6.1
 import PackageDescription
 
-// EnvHubKit — all UI-free logic (Model/Parser/Scanner/Classifier/Crypto/Core),
-// the SwiftUI dependency-injection glue (Helper), and the `envhub` CLI.
+// EnvHubKit — all UI-free logic (Model/Parser/Scanner/Classifier/Crypto/Core)
+// and the SwiftUI dependency-injection glue (Helper).
 // The macOS app (EnvHub/EnvHub.xcodeproj) links this package via a relative
 // local-package reference (../) and consumes the `Core` and `Helper` products.
+// The `envhub` CLI lives in its own package at `cli/` and consumes `Core` the
+// same way, so app and CLI share one store schema and move in lockstep.
 //
 // Dependency rules (kept clean on purpose):
 //   • Concern modules (Parser/Scanner/Classifier/Crypto) depend ONLY on Model.
@@ -28,11 +30,6 @@ let package = Package(
     products: [
         .library(name: "Core", targets: ["Core"]),
         .library(name: "Helper", targets: ["Helper"]),
-        .executable(name: "envhub", targets: ["envhub"]),
-    ],
-    dependencies: [
-        // Apple's standard CLI parser (chosen dependency policy: reputable deps allowed).
-        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0"),
     ],
     targets: [
         // MARK: Concern modules (depend only on Model)
@@ -49,16 +46,6 @@ let package = Package(
             swiftSettings: concurrencySettings
         ),
         .target(name: "Helper", dependencies: ["Core"], swiftSettings: concurrencySettings),
-
-        // MARK: CLI (thin consumer of Core)
-        .executableTarget(
-            name: "envhub",
-            dependencies: [
-                "Core",
-                .product(name: "ArgumentParser", package: "swift-argument-parser"),
-            ],
-            swiftSettings: concurrencySettings
-        ),
 
         // MARK: Tests (UI-free)
         .testTarget(name: "ModelTests", dependencies: ["Model"], swiftSettings: concurrencySettings),

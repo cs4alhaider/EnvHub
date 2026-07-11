@@ -39,7 +39,7 @@ target uses Swift 6 language mode with default `MainActor` isolation (Xcode's
 
 ```sh
 swift test          # the package: fast, UI-free — this is where the logic tests live
-swift run envhub    # the CLI
+swift run --package-path cli envhub    # the CLI (its own package at cli/)
 
 # the app
 xcodebuild -project EnvHub/EnvHub.xcodeproj -scheme EnvHub \

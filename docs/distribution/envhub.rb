@@ -13,8 +13,10 @@ class Envhub < Formula
   depends_on xcode: ["26.0", :build]
 
   def install
-    system "swift", "build", "-c", "release", "--product", "envhub", "--disable-sandbox"
-    bin.install ".build/release/envhub"
+    # The CLI lives in its own package at cli/ (it depends on the root EnvHubKit package).
+    system "swift", "build", "-c", "release", "--product", "envhub",
+           "--package-path", "cli", "--disable-sandbox"
+    bin.install "cli/.build/release/envhub"
   end
 
   test do

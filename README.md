@@ -141,8 +141,8 @@ open EnvHub/EnvHub.xcodeproj
 # …or: xcodebuild -project EnvHub/EnvHub.xcodeproj -scheme EnvHub -destination 'platform=macOS' build
 
 # CLI
-swift run envhub --help
-swift build -c release            # optimized build (scrypt is much faster)
+swift run --package-path cli envhub --help
+swift build -c release --package-path cli   # optimized CLI build (scrypt is much faster)
 
 # Tests
 swift test                        # 87 UI-free tests across all modules

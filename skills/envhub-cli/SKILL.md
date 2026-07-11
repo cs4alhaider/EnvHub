@@ -10,7 +10,7 @@ store, so workspaces you create or reorganize here appear in the app's sidebar
 immediately (and vice versa).
 
 Check availability with `envhub --help`; build from source with
-`swift build -c release --product envhub` in the EnvHub repo if it isn't installed.
+`swift build -c release --product envhub --package-path cli` in the EnvHub repo if it isn't installed.
 
 ## Safety rules (read first)
 
