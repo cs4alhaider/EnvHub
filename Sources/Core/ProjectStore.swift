@@ -18,11 +18,22 @@ public enum ProjectStore {
     /// (nil = "Others"). Like `WorkspaceStore`, not actor-bound — runs wherever the
     /// passed context lives.
     @discardableResult
-    public static func addProject(at url: URL, to context: ModelContext, workspaceID: UUID? = nil) -> ProjectRecord? {
+    public static func addProject(
+        at url: URL,
+        to context: ModelContext,
+        workspaceID: UUID? = nil,
+        bookmark: Data? = nil
+    ) -> ProjectRecord? {
         let path = canonicalPath(for: url)
         let existing = (try? context.fetch(FetchDescriptor<ProjectRecord>())) ?? []
-        if existing.contains(where: { $0.path == path || canonicalPath(for: $0.url) == path }) { return nil }
-        let record = ProjectRecord(name: url.lastPathComponent, path: path, workspaceID: workspaceID)
+        if let match = existing.first(where: { $0.path == path || canonicalPath(for: $0.url) == path }) {
+            // Re-adding an existing project with a fresh grant updates its bookmark
+            // (the sandboxed edition's re-grant path).
+            if let bookmark { match.bookmarkData = bookmark }
+            return nil
+        }
+        let record = ProjectRecord(
+            name: url.lastPathComponent, path: path, workspaceID: workspaceID, bookmarkData: bookmark)
         context.insert(record)
         return record
     }

@@ -27,6 +27,12 @@ public final class ProjectRecord {
     /// first, ties fall back to name order. 0 for everything = plain name order.
     public var sortOrder: Int = 0
 
+    /// Security-scoped bookmark for the folder — how the sandboxed (App Store)
+    /// edition keeps access across launches. Nil in unsandboxed editions and for
+    /// records created before a grant (or by the CLI); the app offers a re-grant
+    /// when it's missing. Defaulted so existing stores migrate automatically.
+    public var bookmarkData: Data? = nil
+
     public init(
         id: UUID = UUID(),
         name: String,
@@ -34,7 +40,8 @@ public final class ProjectRecord {
         dateAdded: Date = .now,
         isPinned: Bool = false,
         workspaceID: UUID? = nil,
-        sortOrder: Int = 0
+        sortOrder: Int = 0,
+        bookmarkData: Data? = nil
     ) {
         self.id = id
         self.name = name
@@ -43,6 +50,7 @@ public final class ProjectRecord {
         self.isPinned = isPinned
         self.workspaceID = workspaceID
         self.sortOrder = sortOrder
+        self.bookmarkData = bookmarkData
     }
 
     public var url: URL { URL(filePath: path) }
