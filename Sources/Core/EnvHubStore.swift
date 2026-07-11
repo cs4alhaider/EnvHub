@@ -16,13 +16,62 @@ public enum EnvHubStore {
 
     public static var schema: Schema { Schema(models) }
 
+    /// TeamID-prefixed App Group shared by the app (via the `application-groups`
+    /// entitlement — required once sandboxed) and the CLI (by literal path;
+    /// unsandboxed processes need no entitlement to use the folder).
+    public static let appGroupID = "G69L3HCQBT.net.alhaider.EnvHub"
+
     /// Where the shared app/CLI store lives. `ENVHUB_STORE=<path>` overrides it —
     /// useful for testing against an isolated store or keeping separate setups.
-    public static var storeURL: URL {
-        if let override = ProcessInfo.processInfo.environment["ENVHUB_STORE"], !override.isEmpty {
+    ///
+    /// Resolution order (decided once per process):
+    ///  1. `ENVHUB_STORE` override.
+    ///  2. The App Group container — the location both editions and the CLI share.
+    ///  3. Application Support — the pre-group location; also the sandboxed
+    ///     fallback when the build lacks the group entitlement (maps into the
+    ///     app's own container, so it is always writable).
+    public static var storeURL: URL { resolvedStoreURL }
+
+    private static let resolvedStoreURL: URL = resolveStoreURL(
+        override: ProcessInfo.processInfo.environment["ENVHUB_STORE"],
+        groupContainer: FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: appGroupID),
+        home: URL.homeDirectory,
+        isSandboxed: AppSandbox.isActive,
+        isUsable: ensureWritableDirectory
+    )
+
+    /// Pure resolution logic (see `storeURL`), parameterized for tests.
+    static func resolveStoreURL(
+        override: String?,
+        groupContainer: URL?,
+        home: URL,
+        isSandboxed: Bool,
+        isUsable: (URL) -> Bool
+    ) -> URL {
+        if let override, !override.isEmpty {
             return URL(fileURLWithPath: override)
         }
+        let suffix = "Library/Application Support/EnvHub/EnvHub.store"
+        var candidates: [URL] = []
+        if let groupContainer {
+            candidates.append(groupContainer.appending(path: suffix))
+        } else if !isSandboxed {
+            // Un-entitled (dev builds, the CLI): the literal group path works for
+            // any unsandboxed process and matches what entitled builds resolve.
+            candidates.append(home.appending(path: "Library/Group Containers/\(appGroupID)/\(suffix)"))
+        }
+        for candidate in candidates where isUsable(candidate.deletingLastPathComponent()) {
+            return candidate
+        }
         return URL.applicationSupportDirectory.appending(path: "EnvHub/EnvHub.store")
+    }
+
+    /// Creates `directory` if needed and confirms we can write into it.
+    static func ensureWritableDirectory(_ directory: URL) -> Bool {
+        let fm = FileManager.default
+        try? fm.createDirectory(at: directory, withIntermediateDirectories: true)
+        return fm.isWritableFile(atPath: directory.path(percentEncoded: false))
     }
 
     /// The EnvHub data directory (holds the store and the CLI↔app hand-off file).
@@ -98,6 +147,17 @@ public enum EnvHubStore {
         try? FileManager.default.createDirectory(
             at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
 
+        // One-time move from the pre-group explicit location (~/Library/Application
+        // Support/EnvHub) into the group container: same schema, so the SQLite files
+        // are copied as-is. Unsandboxed only — the sandboxed edition can't read the
+        // old path, and its fresh container has nothing to migrate.
+        if !AppSandbox.isActive {
+            migrateFileStore(
+                from: URL.applicationSupportDirectory.appending(path: "EnvHub/EnvHub.store"),
+                to: url
+            )
+        }
+
         // Import from the legacy location exactly once: only when the new store file
         // doesn't exist yet (i.e. the first launch after upgrading).
         let fm = FileManager.default
@@ -116,6 +176,26 @@ public enum EnvHubStore {
         return container
     }
 
+    /// Copies a SwiftData/SQLite store (plus `-shm`/`-wal` sidecars) from `source`
+    /// to `destination` when the destination doesn't exist yet and the source does.
+    /// The source is left in place, mirroring `importLegacyStore`'s caution.
+    static func migrateFileStore(from source: URL, to destination: URL) {
+        let fm = FileManager.default
+        let sourcePath = source.path(percentEncoded: false)
+        let destinationPath = destination.path(percentEncoded: false)
+        guard sourcePath != destinationPath,
+              !fm.fileExists(atPath: destinationPath),
+              fm.fileExists(atPath: sourcePath)
+        else { return }
+        try? fm.createDirectory(
+            at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+        for suffix in ["", "-shm", "-wal"] {
+            let from = sourcePath + suffix
+            guard fm.fileExists(atPath: from) else { continue }
+            try? fm.copyItem(atPath: from, toPath: destinationPath + suffix)
+        }
+    }
+
     /// Copies every EnvHub record out of a store at `legacyURL` into `container`.
     /// The legacy store itself is left in place (it may be SwiftData's shared default
     /// location, so deleting it is not ours to do).
@@ -130,7 +210,8 @@ public enum EnvHubStore {
         for p in (try? source.fetch(FetchDescriptor<ProjectRecord>())) ?? [] {
             destination.insert(ProjectRecord(
                 id: p.id, name: p.name, path: p.path, dateAdded: p.dateAdded,
-                isPinned: p.isPinned, workspaceID: p.workspaceID, sortOrder: p.sortOrder
+                isPinned: p.isPinned, workspaceID: p.workspaceID, sortOrder: p.sortOrder,
+                bookmarkData: p.bookmarkData
             ))
         }
         for w in (try? source.fetch(FetchDescriptor<WorkspaceRecord>())) ?? [] {

@@ -1,7 +1,12 @@
 import Foundation
 
-/// Thin wrapper over the `git` CLI (the app is non-sandboxed, so shelling out is fine).
-/// Used to warn when `.env` files are tracked by git and to manage `.gitignore`.
+/// Thin wrapper over the `git` CLI. Used to warn when `.env` files are tracked by
+/// git and to manage `.gitignore`.
+///
+/// Sandbox-aware: the App Store edition can't reliably spawn system git, so inside
+/// the sandbox every spawn is disabled — repo *detection* stays (filesystem-based)
+/// and all `.gitignore` management stays (plain file I/O); only tracked/ignored
+/// detection and `untrack` degrade, which hides the tracking banner in that edition.
 ///
 /// Every public entry point is `@concurrent async`: each one spawns a process or
 /// touches the filesystem, so it must never run on the caller's actor (the app calls
@@ -14,6 +19,9 @@ public enum GitService {
     /// fixture repos with it.
     @discardableResult
     static func git(_ args: [String], in dir: URL, stdin: Data? = nil) -> (status: Int32, out: String, err: String) {
+        guard !AppSandbox.isActive else {
+            return (-1, "", "git integration is disabled in the sandboxed edition")
+        }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
         process.arguments = args
@@ -68,6 +76,11 @@ public enum GitService {
     public static func info(folder: URL, files: [URL]) async -> GitInfo {
         guard let root = findRepoRoot(for: folder) else {
             return GitInfo(isRepo: false, repoRoot: nil, statuses: [])
+        }
+        // Sandboxed: repo detection only — no per-file status, so callers never
+        // show tracking warnings they couldn't act on (untrack needs git too).
+        guard !AppSandbox.isActive else {
+            return GitInfo(isRepo: true, repoRoot: root, statuses: [])
         }
         let names = files.map(\.lastPathComponent)
         let tracked = trackedNames(in: folder, names: names)
