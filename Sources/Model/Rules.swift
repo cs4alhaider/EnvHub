@@ -30,17 +30,6 @@ public struct ClassificationRule: Identifiable, Sendable, Hashable, Codable {
             ClassificationRule(pattern: "dev|development|^\\.env$", kind: .development),
         ]
     }
-
-    /// The defaults exactly as they shipped before the Local/Example kinds existed.
-    /// Used only to recognize an *untouched* stored ruleset and upgrade it to the new
-    /// defaults (see `EnvHubStore.settings`); customized rulesets are never rewritten.
-    public static var legacyDefaults: [ClassificationRule] {
-        [
-            ClassificationRule(pattern: "prod|production", kind: .production),
-            ClassificationRule(pattern: "stag|staging", kind: .staging),
-            ClassificationRule(pattern: "dev|development|^\\.env$", kind: .development),
-        ]
-    }
 }
 
 /// Configuration for filesystem discovery — filename patterns, the excluded directory
@@ -73,13 +62,6 @@ public struct ScanConfig: Sendable, Hashable, Codable {
         // Package-manager and toolchain caches
         ".npm", ".nvm", ".pnpm-store", ".yarn", ".cargo", ".rustup",
         ".gradle", ".m2", ".cocoapods", ".gem", ".docker", ".vscode",
-    ]
-
-    /// The exclusions exactly as they shipped before the list was expanded — used only
-    /// to recognize an *untouched* stored list and upgrade it (see `EnvHubStore.settings`).
-    public static let legacyDefaultExclusions = [
-        "node_modules", ".git", ".next", "dist", "build",
-        ".venv", "venv", "Pods", "DerivedData", ".cache",
     ]
 
     /// Default filename patterns: a bare `.env` plus `.env.<anything>`.

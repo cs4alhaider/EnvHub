@@ -86,8 +86,5 @@ struct ModelTests {
     func ruleDefaults() {
         let kinds = ClassificationRule.defaults.map(\.kind)
         #expect(kinds == [.example, .local, .production, .staging, .development])
-        // The legacy set is frozen — it exists only so stored defaults can be
-        // recognized and upgraded.
-        #expect(ClassificationRule.legacyDefaults.map(\.kind) == [.production, .staging, .development])
     }
 }

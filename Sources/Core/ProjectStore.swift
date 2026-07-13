@@ -55,33 +55,4 @@ public enum ProjectStore {
     public static func setPinned(_ record: ProjectRecord, _ pinned: Bool) {
         record.isPinned = pinned
     }
-
-    /// One-time cleanup for stores that accumulated duplicates before paths were
-    /// canonicalized (e.g. the same folder added with and without a trailing slash by
-    /// successive scans). Keeps the oldest record per canonical path, merges pin /
-    /// workspace metadata from the duplicates onto it, normalizes the stored path,
-    /// and deletes the rest. Runs on every store open; a clean store is a no-op.
-    public static func cleanupDuplicates(in context: ModelContext) {
-        let all = ((try? context.fetch(FetchDescriptor<ProjectRecord>())) ?? [])
-            .sorted { $0.dateAdded < $1.dateAdded }
-        guard !all.isEmpty else { return }
-
-        var keepers: [String: ProjectRecord] = [:]
-        var deletedAny = false
-        for project in all {
-            let canonical = canonicalPath(for: project.url)
-            if let keeper = keepers[canonical] {
-                if project.isPinned { keeper.isPinned = true }
-                if keeper.workspaceID == nil { keeper.workspaceID = project.workspaceID }
-                context.delete(project)
-                deletedAny = true
-            } else {
-                keepers[canonical] = project
-                if project.path != canonical { project.path = canonical }
-            }
-        }
-        if deletedAny || context.hasChanges {
-            try? context.save()
-        }
-    }
 }

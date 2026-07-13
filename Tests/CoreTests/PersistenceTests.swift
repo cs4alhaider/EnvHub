@@ -55,24 +55,6 @@ struct PersistenceTests {
         #expect(try context.fetch(FetchDescriptor<ProjectRecord>()).count == 1)
     }
 
-    @Test("cleanupDuplicates merges same-folder records and keeps pin/workspace metadata")
-    func duplicateCleanup() throws {
-        // Simulate a store that accumulated duplicates before canonicalization:
-        // the same folder with and without a trailing slash.
-        let ws = WorkspaceStore.create(named: "Kept", in: context)
-        context.insert(ProjectRecord(name: "app", path: "/tmp/dup/app", dateAdded: .now.addingTimeInterval(-100)))
-        context.insert(ProjectRecord(name: "app", path: "/tmp/dup/app/", dateAdded: .now, isPinned: true, workspaceID: ws.id))
-
-        ProjectStore.cleanupDuplicates(in: context)
-
-        let remaining = try context.fetch(FetchDescriptor<ProjectRecord>())
-        #expect(remaining.count == 1)
-        let kept = try #require(remaining.first)
-        #expect(kept.isPinned)                    // merged from the newer duplicate
-        #expect(kept.workspaceID == ws.id)        // merged from the newer duplicate
-        #expect(!kept.path.hasSuffix("/"))        // stored path normalized
-    }
-
     @Test("Settings row is created once and reused")
     func settingsSingleton() {
         let a = EnvHubStore.settings(in: context)
@@ -89,23 +71,6 @@ struct PersistenceTests {
         settings.classificationRules.append(ClassificationRule(pattern: "test", kind: .other))
         #expect(settings.classificationRules.count == 6)
         #expect(settings.classificationRules.last?.pattern == "test")
-    }
-
-    @Test("A stored legacy default ruleset is upgraded; a customized one is untouched")
-    func legacyRuleMigration() {
-        let settings = EnvHubStore.settings(in: context)
-
-        // Simulate a store written before the Local/Example kinds existed.
-        settings.classificationRules = ClassificationRule.legacyDefaults
-        _ = EnvHubStore.settings(in: context)
-        #expect(settings.classificationRules.map(\.kind) == ClassificationRule.defaults.map(\.kind))
-
-        // Any user customization opts the ruleset out of migration.
-        var custom = ClassificationRule.legacyDefaults
-        custom[0].pattern = "my-prod"
-        settings.classificationRules = custom
-        _ = EnvHubStore.settings(in: context)
-        #expect(settings.classificationRules.map(\.pattern) == ["my-prod", "stag|staging", "dev|development|^\\.env$"])
     }
 
     @Test("Search is exclusion-based: everything searchable by default, toggles persist")
@@ -158,19 +123,5 @@ struct PersistenceTests {
         let fresh = EnvHubStore.settings(in: context)
         #expect(fresh.maskByDefault == true)
         #expect(fresh.hasSeenOnboarding == false)
-    }
-
-    @Test("A stored legacy exclusion list is upgraded; a customized one is untouched")
-    func legacyExclusionMigration() {
-        let settings = EnvHubStore.settings(in: context)
-
-        settings.exclusions = ScanConfig.legacyDefaultExclusions
-        _ = EnvHubStore.settings(in: context)
-        #expect(settings.exclusions == ScanConfig.defaultExclusions)
-        #expect(settings.exclusions.contains("Library"))
-
-        settings.exclusions = ["node_modules", "my-custom-dir"]
-        _ = EnvHubStore.settings(in: context)
-        #expect(settings.exclusions == ["node_modules", "my-custom-dir"])
     }
 }

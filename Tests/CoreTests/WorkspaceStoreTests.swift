@@ -69,34 +69,4 @@ struct WorkspaceStoreTests {
         WorkspaceStore.sortProjects(in: ws, by: .path, context: context)
         #expect(WorkspaceStore.members(of: ws, in: [a, b, c]).map(\.name) == ["zebra", "apple", "mango"])
     }
-
-    @Test("Legacy store import copies projects, workspaces, folders, and settings once")
-    func legacyImport() throws {
-        // Build a "legacy" store in a temp file with a few records.
-        let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("envhub-legacy-\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: dir) }
-        let legacyURL = dir.appendingPathComponent("default.store")
-
-        let legacy = try ModelContainer(
-            for: EnvHubStore.schema,
-            configurations: [ModelConfiguration(schema: EnvHubStore.schema, url: legacyURL)]
-        )
-        let legacyContext = ModelContext(legacy)
-        legacyContext.insert(ProjectRecord(name: "old-app", path: "/tmp/old-app", isPinned: true))
-        legacyContext.insert(ScanFolderRecord(path: "/tmp/scan-root"))
-        legacyContext.insert(AppSettings(maskByDefault: false))
-        try legacyContext.save()
-
-        // Import into a fresh (in-memory) container and verify everything arrived.
-        let fresh = try EnvHubStore.container(inMemory: true)
-        try EnvHubStore.importLegacyStore(from: legacyURL, into: fresh)
-
-        let projects = try ModelContext(fresh).fetch(FetchDescriptor<ProjectRecord>())
-        #expect(projects.map(\.name) == ["old-app"])
-        #expect(projects.first?.isPinned == true)
-        #expect(try ModelContext(fresh).fetch(FetchDescriptor<ScanFolderRecord>()).count == 1)
-        #expect(try ModelContext(fresh).fetch(FetchDescriptor<AppSettings>()).first?.maskByDefault == false)
-    }
 }

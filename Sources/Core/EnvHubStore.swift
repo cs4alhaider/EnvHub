@@ -3,12 +3,9 @@ import SwiftData
 
 /// Central place to build the SwiftData container and fetch-or-create the settings row.
 ///
-/// The store lives at an **explicit, well-known URL** (`~/Library/Application
-/// Support/EnvHub/EnvHub.store`) so the app and the `envhub` CLI open the *same*
-/// database — that's what lets the CLI list and organize the workspaces you see in
-/// the sidebar. Earlier versions used SwiftData's implicit default location; the
-/// first open after upgrading imports that legacy data once (see
-/// `importLegacyStore`).
+/// The store lives at an **explicit, well-known URL** inside the App Group container
+/// (see `storeURL`) so the app and the `envhub` CLI open the *same* database — that's
+/// what lets the CLI list and organize the workspaces you see in the sidebar.
 public enum EnvHubStore {
     public static let models: [any PersistentModel.Type] = [
         ProjectRecord.self, WorkspaceRecord.self, ScanFolderRecord.self, AppSettings.self,
@@ -16,9 +13,9 @@ public enum EnvHubStore {
 
     public static var schema: Schema { Schema(models) }
 
-    /// TeamID-prefixed App Group shared by the app (via the `application-groups`
-    /// entitlement — required once sandboxed) and the CLI (by literal path;
-    /// unsandboxed processes need no entitlement to use the folder).
+    /// App Group shared by the app (via the `application-groups` entitlement —
+    /// required once sandboxed) and the CLI (by literal path; unsandboxed
+    /// processes need no entitlement to use the folder).
     public static let appGroupID = "group.net.alhaider.EnvHub"
 
     /// Where the shared app/CLI store lives. `ENVHUB_STORE=<path>` overrides it —
@@ -27,9 +24,9 @@ public enum EnvHubStore {
     /// Resolution order (decided once per process):
     ///  1. `ENVHUB_STORE` override.
     ///  2. The App Group container — the location both editions and the CLI share.
-    ///  3. Application Support — the pre-group location; also the sandboxed
-    ///     fallback when the build lacks the group entitlement (maps into the
-    ///     app's own container, so it is always writable).
+    ///  3. Application Support — the fallback when the group container is
+    ///     unavailable (sandboxed it maps into the app's own container, so it
+    ///     is always writable).
     public static var storeURL: URL { resolvedStoreURL }
 
     private static let resolvedStoreURL: URL = resolveStoreURL(
@@ -109,31 +106,18 @@ public enum EnvHubStore {
     }
 
     /// App side: read and clear any pending request (action + folder URL), or `nil`
-    /// when nothing is waiting. A single-line file (older format) defaults to
-    /// `addProject` for backward compatibility.
+    /// when nothing is waiting.
     public static func consumePendingOpen() -> PendingOpen? {
         let url = pendingOpenURL
         guard let raw = try? String(contentsOf: url, encoding: .utf8) else { return nil }
         try? FileManager.default.removeItem(at: url)
 
         let lines = raw.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-        let action: PendingAction
-        let pathLine: String
-        if lines.count >= 2, let parsed = PendingAction(rawValue: lines[0].trimmingCharacters(in: .whitespaces)) {
-            action = parsed
-            pathLine = lines[1]
-        } else {
-            action = .addProject
-            pathLine = lines.first ?? ""
-        }
-        let trimmed = pathLine.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard lines.count >= 2,
+              let action = PendingAction(rawValue: lines[0].trimmingCharacters(in: .whitespaces))
+        else { return nil }
+        let trimmed = lines[1].trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : PendingOpen(action: action, url: URL(filePath: trimmed))
-    }
-
-    /// SwiftData's implicit location, used by EnvHub before the store moved to
-    /// `storeURL` (kept only for the one-time import).
-    static var legacyStoreURL: URL {
-        URL.applicationSupportDirectory.appending(path: "default.store")
     }
 
     /// Builds the shared `ModelContainer`. `inMemory` is used by tests.
@@ -146,113 +130,19 @@ public enum EnvHubStore {
         let url = storeURL
         try? FileManager.default.createDirectory(
             at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-
-        // One-time move from the pre-group explicit location (~/Library/Application
-        // Support/EnvHub) into the group container: same schema, so the SQLite files
-        // are copied as-is. Unsandboxed only — the sandboxed edition can't read the
-        // old path, and its fresh container has nothing to migrate.
-        if !AppSandbox.isActive {
-            migrateFileStore(
-                from: URL.applicationSupportDirectory.appending(path: "EnvHub/EnvHub.store"),
-                to: url
-            )
-        }
-
-        // Import from the legacy location exactly once: only when the new store file
-        // doesn't exist yet (i.e. the first launch after upgrading).
-        let fm = FileManager.default
-        let shouldImportLegacy = !fm.fileExists(atPath: url.path(percentEncoded: false))
-            && fm.fileExists(atPath: legacyStoreURL.path(percentEncoded: false))
-
         let configuration = ModelConfiguration(schema: schema, url: url)
-        let container = try ModelContainer(for: schema, configurations: [configuration])
-
-        if shouldImportLegacy {
-            try? importLegacyStore(from: legacyStoreURL, into: container)
-        }
-        // Merge any duplicate project records left over from before paths were
-        // canonicalized (a no-op on clean stores).
-        ProjectStore.cleanupDuplicates(in: ModelContext(container))
-        return container
-    }
-
-    /// Copies a SwiftData/SQLite store (plus `-shm`/`-wal` sidecars) from `source`
-    /// to `destination` when the destination doesn't exist yet and the source does.
-    /// The source is left in place, mirroring `importLegacyStore`'s caution.
-    static func migrateFileStore(from source: URL, to destination: URL) {
-        let fm = FileManager.default
-        let sourcePath = source.path(percentEncoded: false)
-        let destinationPath = destination.path(percentEncoded: false)
-        guard sourcePath != destinationPath,
-              !fm.fileExists(atPath: destinationPath),
-              fm.fileExists(atPath: sourcePath)
-        else { return }
-        try? fm.createDirectory(
-            at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
-        for suffix in ["", "-shm", "-wal"] {
-            let from = sourcePath + suffix
-            guard fm.fileExists(atPath: from) else { continue }
-            try? fm.copyItem(atPath: from, toPath: destinationPath + suffix)
-        }
-    }
-
-    /// Copies every EnvHub record out of a store at `legacyURL` into `container`.
-    /// The legacy store itself is left in place (it may be SwiftData's shared default
-    /// location, so deleting it is not ours to do).
-    static func importLegacyStore(from legacyURL: URL, into container: ModelContainer) throws {
-        let legacyContainer = try ModelContainer(
-            for: schema,
-            configurations: [ModelConfiguration(schema: schema, url: legacyURL)]
-        )
-        let source = ModelContext(legacyContainer)
-        let destination = ModelContext(container)
-
-        for p in (try? source.fetch(FetchDescriptor<ProjectRecord>())) ?? [] {
-            destination.insert(ProjectRecord(
-                id: p.id, name: p.name, path: p.path, dateAdded: p.dateAdded,
-                isPinned: p.isPinned, workspaceID: p.workspaceID, sortOrder: p.sortOrder,
-                bookmarkData: p.bookmarkData
-            ))
-        }
-        for w in (try? source.fetch(FetchDescriptor<WorkspaceRecord>())) ?? [] {
-            destination.insert(WorkspaceRecord(
-                id: w.id, name: w.name, sortOrder: w.sortOrder, dateAdded: w.dateAdded))
-        }
-        for f in (try? source.fetch(FetchDescriptor<ScanFolderRecord>())) ?? [] {
-            destination.insert(ScanFolderRecord(path: f.path, dateAdded: f.dateAdded))
-        }
-        if let s = (try? source.fetch(FetchDescriptor<AppSettings>()))?.first {
-            destination.insert(AppSettings(
-                maskByDefault: s.maskByDefault,
-                deepScanDefault: s.deepScanDefault,
-                filenamePatterns: s.filenamePatterns,
-                exclusions: s.exclusions,
-                classificationRules: s.classificationRules
-            ))
-        }
-        try destination.save()
+        return try ModelContainer(for: schema, configurations: [configuration])
     }
 
     /// Returns the single `AppSettings` row, creating it on first use.
     @MainActor
     public static func settings(in context: ModelContext) -> AppSettings {
         if let existing = try? context.fetch(FetchDescriptor<AppSettings>()).first {
-            migrateDefaultRulesIfNeeded(existing)
-            migrateDefaultExclusionsIfNeeded(existing)
             return existing
         }
         let created = AppSettings()
         context.insert(created)
         return created
-    }
-
-    /// Upgrades a stored exclusion list that is *exactly* the old shipped default to
-    /// the expanded default (Library, package-manager caches, …). A customized list
-    /// is never rewritten.
-    @MainActor
-    static func migrateDefaultExclusionsIfNeeded(_ settings: AppSettings) {
-        guard settings.exclusions == ScanConfig.legacyDefaultExclusions else { return }
-        settings.exclusions = ScanConfig.defaultExclusions
     }
 
     /// Erases everything EnvHub knows (Settings → Data → Reset EnvHub): projects,
@@ -269,21 +159,5 @@ public enum EnvHubStore {
         deleteAll(WorkspaceRecord.self)
         deleteAll(ScanFolderRecord.self)
         deleteAll(AppSettings.self)
-    }
-
-    /// Upgrades a stored ruleset that is *exactly* the pre-Local/Example defaults to
-    /// the current defaults (which add the `example` and `local` rules). A ruleset the
-    /// user has customized in any way is left alone — they can always use "Reset to
-    /// Defaults" in Settings.
-    @MainActor
-    static func migrateDefaultRulesIfNeeded(_ settings: AppSettings) {
-        let stored = settings.classificationRules
-        let legacy = ClassificationRule.legacyDefaults
-        guard stored.count == legacy.count,
-              zip(stored, legacy).allSatisfy({
-                  $0.pattern == $1.pattern && $0.kind == $1.kind && $0.isEnabled == $1.isEnabled
-              })
-        else { return }
-        settings.classificationRules = ClassificationRule.defaults
     }
 }

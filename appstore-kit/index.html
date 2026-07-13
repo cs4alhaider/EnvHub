@@ -197,7 +197,7 @@
   <div class="aside-foot">
     <i style="background:var(--green)"></i>8 shots · 2880×1800<br>
     <i style="background:var(--blue)"></i>metadata within limits<br>
-    <i style="background:var(--amber)"></i>4 external steps left<br>
+    <i style="background:var(--amber)"></i>3 external steps left<br>
     <br>branch <span style="color:var(--dim)">app-store-prep</span><br>2026-07-11
   </div>
 </aside>
@@ -208,7 +208,7 @@
 <section class="hero" id="verdict">
   <div class="eyebrow"><b># 01</b> · VERDICT · CAN ENVHUB SHIP ON THE MAC APP STORE?</div>
   <h1><em>Yes — it's publishable.</em><br>The project side is done — signing, portal setup and the ASC record remain.</h1>
-  <p class="lede">Update 2026-07-11: the sandbox is enabled with read/write user-file access, the App Store entitlements file is wired into both configurations, versions are 1.0.0 everywhere (app, Core, CLI — 106 tests green), copyright and the export-compliance key are set, and the privacy manifest ships in the bundle. What remains is entirely outside the repo: pick the signing team (and align the App Group prefix if it changes), register IDs in the developer portal, create the ASC record, and push PRIVACY.md so the privacy URL resolves. Everything you need to submit — screenshots, name, description, keywords, review notes — is prepared below.</p>
+  <p class="lede">Update 2026-07-11: the sandbox is enabled with read/write user-file access, the App Store entitlements file is wired into both configurations, versions are 1.0.0 everywhere (app, Core, CLI — 106 tests green), copyright and the export-compliance key are set, and the privacy manifest ships in the bundle. What remains is entirely outside the repo: pick the signing team, attach the registered group.net.alhaider.EnvHub group to the App ID in the portal, create the ASC record, and push PRIVACY.md so the privacy URL resolves. Everything you need to submit — screenshots, name, description, keywords, review notes — is prepared below.</p>
   <div class="chips">
     <span class="chip"><i style="background:var(--green)"></i>App Sandbox: implemented &amp; validated</span>
     <span class="chip"><i style="background:var(--green)"></i>Privacy: zero data collection</span>
@@ -218,7 +218,7 @@
   </div>
   <div class="stats">
     <div class="stat"><b style="color:var(--green)">8</b><span>App Store screenshots, upload-ready</span></div>
-    <div class="stat"><b style="color:var(--red)">4</b><span>external steps left (team · group · ASC · privacy URL)</span></div>
+    <div class="stat"><b style="color:var(--red)">3</b><span>external steps left (team · ASC · privacy URL)</span></div>
     <div class="stat"><b style="color:var(--amber)">5</b><span>recommended improvements</span></div>
     <div class="stat"><b style="color:var(--blue)">16</b><span>ASC fields drafted &amp; in-limit</span></div>
   </div>
@@ -270,9 +270,9 @@ DEVELOPMENT_TEAM = <span class="o">&lt;your Apple Developer Program team&gt;</sp
       </div>
 
       <div class="blocker">
-        <span class="num">BLOCKER 03</span>
-        <h4>App Group ID must match the final team</h4>
-        <p>On macOS, App Group IDs are prefixed by the <b>team ID</b>. <span class="k">G69L3HCQBT.net.alhaider.EnvHub</span> is hardcoded in <b>three places</b>: <span class="k">EnvHubStore.appGroupID</span> (Sources/Core/EnvHubStore.swift), <span class="k">EnvHub-AppStore.entitlements</span>, and <span class="k">EnvHub-DeveloperID.entitlements</span>. If you ship under any other team, update all three together — otherwise the shared store silently falls back and the CLI and app stop seeing the same library.</p>
+        <span class="num" style="color:var(--green)">BLOCKER 03 · ✅ RESOLVED 2026-07-13</span>
+        <h4>App Group registered and aligned everywhere</h4>
+        <p>The group is the portal-registered <span class="k">group.net.alhaider.EnvHub</span>, and all <b>three references</b> match it exactly: <span class="k">EnvHubStore.appGroupID</span> (Sources/Core/EnvHubStore.swift), <span class="k">EnvHub-AppStore.entitlements</span>, and <span class="k">EnvHub-DeveloperID.entitlements</span>. Runtime-verified: the CLI resolves the store to <span class="k">~/Library/Group Containers/group.net.alhaider.EnvHub/…</span>. Remaining portal step: enable App Groups on bundle ID <span class="k">net.alhaider.EnvHub</span> and attach this group so profiles authorize it.</p>
       </div>
 
       <div class="blocker">
@@ -284,7 +284,7 @@ DEVELOPMENT_TEAM = <span class="o">&lt;your Apple Developer Program team&gt;</sp
       <div class="blocker">
         <span class="num">BLOCKER 05</span>
         <h4>Register IDs + create the App Store Connect record</h4>
-        <p>Portal: register bundle ID <span class="k">net.alhaider.EnvHub</span> with the App Groups capability, and the group itself. ASC: create the app (name <b>EnvHub</b>, SKU e.g. <span class="k">envhub-mac-001</span>). The name was free on the App Store as of 2026-07-11.</p>
+        <p>Portal: register bundle ID <span class="k">net.alhaider.EnvHub</span> with the App Groups capability and attach the already-registered <span class="k">group.net.alhaider.EnvHub</span>. ASC: create the app (name <b>EnvHub</b>, SKU e.g. <span class="k">envhub-mac-001</span>). The name was free on the App Store as of 2026-07-11.</p>
       </div>
 
       <div class="blocker">
@@ -499,7 +499,7 @@ EnvHub is open source; the developer holds all rights and additionally licenses 
   </div></div>
   <div class="step"><div class="n">02</div><div>
     <h4>Developer portal: IDs &amp; capabilities</h4>
-    <p>Register bundle ID <code>net.alhaider.EnvHub</code> with the App Groups capability; register the group (team-prefixed). Update the three hardcoded group references if your team isn't G69L3HCQBT (Blocker 03).</p>
+    <p>Register bundle ID <code>net.alhaider.EnvHub</code> with the App Groups capability and attach the registered group <code>group.net.alhaider.EnvHub</code>. The group itself, the code constant, and both entitlements files already match (Blocker 03 — resolved).</p>
   </div></div>
   <div class="step"><div class="n">03</div><div>
     <h4>Publish the privacy policy</h4>
