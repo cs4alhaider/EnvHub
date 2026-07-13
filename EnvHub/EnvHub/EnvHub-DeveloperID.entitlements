@@ -2,12 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Developer ID / Homebrew edition: unsandboxed (scans anything, spawns git,
-	     bundles the CLI). The app group only pins the store location shared with
-	     the CLI and the App Store edition. -->
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>G69L3HCQBT.net.alhaider.EnvHub</string>
+		<string>group.net.alhaider.EnvHub</string>
 	</array>
 </dict>
 </plist>

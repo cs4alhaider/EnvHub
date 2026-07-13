@@ -2,18 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Mac App Store edition: sandboxed. Folder access is user-granted (open
-	     panels) and persisted via security-scoped bookmarks; the app group is the
-	     store location shared with the Homebrew CLI. -->
 	<key>com.apple.security.app-sandbox</key>
-	<true/>
-	<key>com.apple.security.files.user-selected.read-write</key>
-	<true/>
-	<key>com.apple.security.files.bookmarks.app-scope</key>
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>G69L3HCQBT.net.alhaider.EnvHub</string>
+		<string>group.net.alhaider.EnvHub</string>
 	</array>
+	<key>com.apple.security.files.bookmarks.app-scope</key>
+	<true/>
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
 </dict>
 </plist>

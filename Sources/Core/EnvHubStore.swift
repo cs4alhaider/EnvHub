@@ -19,7 +19,7 @@ public enum EnvHubStore {
     /// TeamID-prefixed App Group shared by the app (via the `application-groups`
     /// entitlement — required once sandboxed) and the CLI (by literal path;
     /// unsandboxed processes need no entitlement to use the folder).
-    public static let appGroupID = "G69L3HCQBT.net.alhaider.EnvHub"
+    public static let appGroupID = "group.net.alhaider.EnvHub"
 
     /// Where the shared app/CLI store lives. `ENVHUB_STORE=<path>` overrides it —
     /// useful for testing against an isolated store or keeping separate setups.

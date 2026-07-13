@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EnvHub · App Store Submission Kit</title>
+<link rel="icon" href="icon.png">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --panel: rgba(255,255,255,.035);
+    --panel2: rgba(255,255,255,.055);
+    --line: rgba(255,255,255,.09);
+    --line2: rgba(255,255,255,.16);
+    --txt: rgba(255,255,255,.92);
+    --dim: rgba(255,255,255,.6);
+    --faint: rgba(255,255,255,.38);
+    --green: #34c759; --amber: #ff9f0a; --red: #ff453a;
+    --blue: #0a84ff; --purple: #bf5af2; --indigo: #7d7aff; --teal: #40c8e0;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    background:var(--bg); color:var(--txt); font-family:var(--sans);
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+  }
+  /* ---------- atmosphere ---------- */
+  .atmo { position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(1100px 700px at 78% -8%, rgba(125,122,255,.14), transparent 60%),
+      radial-gradient(900px 600px at -8% 32%, rgba(10,132,255,.09), transparent 55%),
+      radial-gradient(1000px 700px at 106% 88%, rgba(191,90,242,.07), transparent 55%);
+  }
+  .atmo::before { content:""; position:absolute; inset:0; opacity:.4;
+    background-image:
+      linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+    background-size:56px 56px;
+    -webkit-mask-image:radial-gradient(1200px 800px at 60% 10%, #000 20%, transparent 75%);
+            mask-image:radial-gradient(1200px 800px at 60% 10%, #000 20%, transparent 75%);
+  }
+  .atmo::after { content:""; position:absolute; inset:0; opacity:.05; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  /* ---------- layout ---------- */
+  .shell { position:relative; z-index:1; display:grid; grid-template-columns:264px minmax(0,1fr); }
+  @media (max-width: 900px){ .shell { grid-template-columns:1fr; } aside { display:none; } }
+  aside {
+    position:sticky; top:0; height:100vh; padding:34px 26px;
+    border-right:1px solid var(--line);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .logo { display:flex; align-items:center; gap:13px; margin-bottom:26px; }
+  .logo img { width:44px; height:44px; border-radius:11px; box-shadow:0 6px 22px rgba(0,0,0,.5); }
+  .logo b { font-size:17px; letter-spacing:.01em; display:block; }
+  .logo span { font-family:var(--mono); font-size:10.5px; color:var(--faint); letter-spacing:.14em; text-transform:uppercase; }
+  nav { display:flex; flex-direction:column; gap:2px; }
+  nav a {
+    font-family:var(--mono); font-size:12.5px; color:var(--dim); text-decoration:none;
+    padding:8px 12px; border-radius:8px; border:1px solid transparent;
+    transition:all .15s ease; letter-spacing:.02em;
+  }
+  nav a .h { color:var(--faint); margin-right:8px; }
+  nav a:hover { color:var(--txt); background:var(--panel); }
+  nav a.active { color:var(--txt); background:var(--panel2); border-color:var(--line); }
+  .aside-foot { margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--faint); line-height:1.9; }
+  .aside-foot i { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:7px; }
+  main { padding:0 max(48px, 6vw) 120px; max-width:1180px; }
+  section { padding-top:96px; }
+  .eyebrow { font-family:var(--mono); font-size:12px; letter-spacing:.22em; color:var(--faint); text-transform:uppercase; margin-bottom:18px; }
+  .eyebrow b { color:var(--indigo); font-weight:400; }
+  h2 { font-size:clamp(30px, 3.6vw, 44px); font-weight:700; letter-spacing:-.02em; line-height:1.1; margin-bottom:14px; }
+  .lede { color:var(--dim); font-size:17px; max-width:72ch; }
+  /* ---------- hero ---------- */
+  .hero { min-height:88vh; display:flex; flex-direction:column; justify-content:center; padding-top:60px; }
+  .hero h1 { font-size:clamp(44px, 6vw, 84px); font-weight:700; letter-spacing:-.025em; line-height:1.04; margin:18px 0 22px; }
+  .hero h1 em { font-style:normal; background:linear-gradient(100deg, var(--green) 15%, var(--teal) 85%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hero .lede { font-size:19px; }
+  .chips { display:flex; flex-wrap:wrap; gap:10px; margin-top:34px; }
+  .chip {
+    font-family:var(--mono); font-size:12.5px; padding:8px 14px; border-radius:100px;
+    border:1px solid var(--line2); color:var(--dim); background:var(--panel);
+  }
+  .chip i { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:14px; margin-top:44px; }
+  .stat { border:1px solid var(--line); border-radius:16px; padding:20px 22px; background:var(--panel); }
+  .stat b { font-size:34px; font-weight:700; letter-spacing:-.02em; display:block; }
+  .stat span { font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); }
+  /* ---------- review ---------- */
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:36px; }
+  @media (max-width:1100px){ .cols { grid-template-columns:1fr; } }
+  .card { border:1px solid var(--line); border-radius:18px; background:var(--panel); padding:26px 28px; }
+  .card h3 { font-size:15px; font-weight:600; letter-spacing:.01em; display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .card h3 .dot { width:9px; height:9px; border-radius:50%; }
+  ul.check { list-style:none; display:flex; flex-direction:column; gap:11px; }
+  ul.check li { display:flex; gap:12px; font-size:14.5px; color:var(--dim); }
+  ul.check li::before { content:"✓"; color:var(--green); font-weight:700; flex-shrink:0; }
+  ul.check li b { color:var(--txt); font-weight:600; }
+  .blocker { border:1px solid var(--line); border-left:3px solid var(--red); border-radius:14px; background:var(--panel); padding:20px 24px; margin-top:14px; }
+  .blocker.amber { border-left-color:var(--amber); }
+  .blocker .num { font-family:var(--mono); font-size:11px; color:var(--faint); letter-spacing:.18em; }
+  .blocker h4 { font-size:16px; font-weight:650; margin:6px 0 8px; letter-spacing:-.005em; }
+  .blocker p { font-size:14px; color:var(--dim); max-width:88ch; }
+  .blocker p + p { margin-top:8px; }
+  .blocker code, .blocker .k { font-family:var(--mono); font-size:12.5px; color:var(--teal); background:rgba(64,200,224,.08); padding:1.5px 6px; border-radius:6px; }
+  pre {
+    font-family:var(--mono); font-size:12.5px; line-height:1.7; color:#c9d4e3;
+    background:#0d0e15; border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; overflow-x:auto; margin-top:12px;
+  }
+  pre .c { color:#5b667a; } pre .g { color:#7ee08c; } pre .o { color:#ffb86c; }
+  /* ---------- screenshots ---------- */
+  .gallery { display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-top:38px; }
+  @media (max-width:1100px){ .gallery { grid-template-columns:1fr; } }
+  figure { position:relative; }
+  figure img {
+    width:100%; display:block; border-radius:14px; border:1px solid var(--line2);
+    cursor:zoom-in; transition:transform .2s ease, box-shadow .2s ease;
+    box-shadow:0 18px 50px rgba(0,0,0,.45);
+  }
+  figure img:hover { transform:translateY(-3px); box-shadow:0 26px 60px rgba(0,0,0,.6); }
+  figcaption { display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:12px 4px 0; }
+  figcaption b { font-size:14px; font-weight:600; }
+  figcaption span { font-family:var(--mono); font-size:11px; color:var(--faint); white-space:nowrap; }
+  .shotnote { margin-top:30px; }
+  dialog {
+    border:none; background:rgba(8,8,12,.88); backdrop-filter:blur(18px);
+    width:100vw; height:100vh; max-width:100vw; max-height:100vh;
+    display:flex; align-items:center; justify-content:center; padding:3vmin;
+  }
+  dialog:not([open]) { display:none; }
+  dialog img { max-width:100%; max-height:100%; border-radius:12px; border:1px solid var(--line2); cursor:zoom-out; }
+  /* ---------- metadata ---------- */
+  .field { border:1px solid var(--line); border-radius:16px; background:var(--panel); margin-top:16px; overflow:hidden; }
+  .field header {
+    display:flex; align-items:center; gap:12px; padding:14px 20px;
+    border-bottom:1px solid var(--line); background:rgba(255,255,255,.02);
+  }
+  .field header b { font-size:13.5px; font-weight:600; letter-spacing:.01em; }
+  .field header .lim { font-family:var(--mono); font-size:11px; color:var(--faint); margin-left:auto; }
+  .field header .lim.ok { color:var(--green); }
+  .copybtn {
+    font-family:var(--mono); font-size:11px; letter-spacing:.06em; cursor:pointer;
+    color:var(--dim); background:var(--panel2); border:1px solid var(--line2);
+    border-radius:8px; padding:5px 12px; transition:all .15s ease;
+  }
+  .copybtn:hover { color:#fff; border-color:rgba(255,255,255,.3); }
+  .copybtn.done { color:var(--green); border-color:rgba(52,199,89,.4); }
+  .field .val { padding:16px 20px; font-size:14.5px; color:var(--txt); white-space:pre-wrap; }
+  .field .val.mono { font-family:var(--mono); font-size:13px; color:#c9d4e3; }
+  .field .note { padding:0 20px 14px; font-size:12.5px; color:var(--faint); }
+  .kv { display:grid; grid-template-columns:220px 1fr; border-top:1px solid var(--line); }
+  .kv:first-of-type { border-top:none; }
+  .kv .k { font-family:var(--mono); font-size:12px; color:var(--faint); padding:13px 20px; letter-spacing:.04em; }
+  .kv .v { font-size:14px; padding:12px 20px 12px 0; color:var(--dim); }
+  .kv .v b { color:var(--txt); font-weight:600; }
+  /* ---------- steps ---------- */
+  .step { display:grid; grid-template-columns:56px 1fr; gap:18px; margin-top:26px; }
+  .step .n {
+    font-family:var(--mono); font-size:15px; color:var(--indigo);
+    width:44px; height:44px; border:1px solid var(--line2); border-radius:12px;
+    display:flex; align-items:center; justify-content:center; background:var(--panel);
+  }
+  .step h4 { font-size:16.5px; font-weight:650; margin-bottom:6px; letter-spacing:-.005em; }
+  .step p { font-size:14px; color:var(--dim); max-width:86ch; }
+  .step code { font-family:var(--mono); font-size:12.5px; color:var(--teal); background:rgba(64,200,224,.08); padding:1.5px 6px; border-radius:6px; }
+  /* ---------- assets table ---------- */
+  table { width:100%; border-collapse:collapse; margin-top:30px; font-size:13.5px; }
+  th { font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); text-align:left; padding:0 14px 12px; }
+  td { padding:12px 14px; border-top:1px solid var(--line); color:var(--dim); vertical-align:top; }
+  td:first-child { font-family:var(--mono); font-size:12.5px; color:#c9d4e3; white-space:nowrap; }
+  footer { margin-top:110px; padding-top:28px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--faint); line-height:2; }
+  a { color:var(--teal); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  ::selection { background:rgba(125,122,255,.35); }
+</style>
+</head>
+<body>
+<div class="atmo"></div>
+<div class="shell">
+
+<aside>
+  <div class="logo">
+    <img src="icon.png" alt="EnvHub icon">
+    <div><b>EnvHub</b><span>App Store Kit</span></div>
+  </div>
+  <nav id="nav">
+    <a href="#verdict"><span class="h">#</span>verdict</a>
+    <a href="#review"><span class="h">#</span>readiness-review</a>
+    <a href="#screenshots"><span class="h">#</span>screenshots</a>
+    <a href="#metadata"><span class="h">#</span>metadata.env</a>
+    <a href="#submit"><span class="h">#</span>submission-steps</a>
+    <a href="#assets"><span class="h">#</span>assets</a>
+  </nav>
+  <div class="aside-foot">
+    <i style="background:var(--green)"></i>8 shots · 2880×1800<br>
+    <i style="background:var(--blue)"></i>metadata within limits<br>
+    <i style="background:var(--amber)"></i>4 external steps left<br>
+    <br>branch <span style="color:var(--dim)">app-store-prep</span><br>2026-07-11
+  </div>
+</aside>
+
+<main>
+
+<!-- ================= VERDICT ================= -->
+<section class="hero" id="verdict">
+  <div class="eyebrow"><b># 01</b> · VERDICT · CAN ENVHUB SHIP ON THE MAC APP STORE?</div>
+  <h1><em>Yes — it's publishable.</em><br>The project side is done — signing, portal setup and the ASC record remain.</h1>
+  <p class="lede">Update 2026-07-11: the sandbox is enabled with read/write user-file access, the App Store entitlements file is wired into both configurations, versions are 1.0.0 everywhere (app, Core, CLI — 106 tests green), copyright and the export-compliance key are set, and the privacy manifest ships in the bundle. What remains is entirely outside the repo: pick the signing team (and align the App Group prefix if it changes), register IDs in the developer portal, create the ASC record, and push PRIVACY.md so the privacy URL resolves. Everything you need to submit — screenshots, name, description, keywords, review notes — is prepared below.</p>
+  <div class="chips">
+    <span class="chip"><i style="background:var(--green)"></i>App Sandbox: implemented &amp; validated</span>
+    <span class="chip"><i style="background:var(--green)"></i>Privacy: zero data collection</span>
+    <span class="chip"><i style="background:var(--green)"></i>Name “EnvHub” free on the App Store</span>
+    <span class="chip"><i style="background:var(--green)"></i>GPL OK — sole copyright holder</span>
+    <span class="chip"><i style="background:var(--amber)"></i>Signing team + ASC record needed</span>
+  </div>
+  <div class="stats">
+    <div class="stat"><b style="color:var(--green)">8</b><span>App Store screenshots, upload-ready</span></div>
+    <div class="stat"><b style="color:var(--red)">4</b><span>external steps left (team · group · ASC · privacy URL)</span></div>
+    <div class="stat"><b style="color:var(--amber)">5</b><span>recommended improvements</span></div>
+    <div class="stat"><b style="color:var(--blue)">16</b><span>ASC fields drafted &amp; in-limit</span></div>
+  </div>
+</section>
+
+<!-- ================= REVIEW ================= -->
+<section id="review">
+  <div class="eyebrow"><b># 02</b> · READINESS REVIEW · BRANCH app-store-prep @ ed28077</div>
+  <h2>What passes, what blocks, what's smart to fix.</h2>
+  <p class="lede">Reviewed against the App Review Guidelines and macOS submission requirements: sandbox &amp; entitlements, privacy manifest and labels, signing, versioning, licensing, and store assets.</p>
+
+  <div class="cols">
+    <div class="card">
+      <h3><span class="dot" style="background:var(--green)"></span>Already App Store-grade</h3>
+      <ul class="check">
+        <li><div><b>App Sandbox edition works end-to-end.</b> Security-scoped bookmarks persist folder access, re-grants update records, ScanModel bookmarks every added project, and a “No Access — Grant” flow covers revocation. Validated in a sandboxed run on 2026-07-11.</div></li>
+        <li><div><b>App Store entitlements file exists</b> — sandbox + user-selected read/write + app-scope bookmarks + App Group (<code>EnvHub-AppStore.entitlements</code>).</div></li>
+        <li><div><b>Runtime edition gating.</b> Sandboxed builds hide the CLI installer menu and never spawn <code>git</code>; one code path, keyed off <code>AppSandbox.isActive</code>.</div></li>
+        <li><div><b>Offline by architecture.</b> No network calls anywhere → privacy label is simply “Data Not Collected.”</div></li>
+        <li><div><b>Complete icon set</b> (16→1024 px, branded squircle + key).</div></li>
+        <li><div><b>Category already set:</b> <code>public.app-category.developer-tools</code>.</div></li>
+        <li><div><b>Hardened Runtime on; Swift 6 strict concurrency; 106 package tests.</b></div></li>
+        <li><div><b>Licensing is clean.</b> Every commit is yours (36/36), so you can dual-license: GPL-3.0 on GitHub and the standard Apple EULA on the App Store.</div></li>
+        <li><div><b>Prepared today:</b> <code>PrivacyInfo.xcprivacy</code> (required-reason APIs: UserDefaults CA92.1, file timestamps DDA9.1 + 3B52.1) and a <code>PRIVACY.md</code> draft for the required privacy-policy URL.</div></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--red)"></span>Blockers — do these before archiving</h3>
+
+      <div class="blocker" style="margin-top:4px">
+        <span class="num" style="color:var(--green)">BLOCKER 01 · ✅ RESOLVED 2026-07-11</span>
+        <h4>Wire the App Store entitlements into the project</h4>
+        <p>The entitlements files exist but nothing in <span class="k">project.pbxproj</span> references them — today they're applied only when signing by hand. Add an <b>AppStore</b> build configuration (or adjust Release):</p>
+        <pre><span class="c">// EnvHub target build settings (AppStore configuration)</span>
+ENABLE_APP_SANDBOX = <span class="g">YES</span>
+CODE_SIGN_ENTITLEMENTS = <span class="g">EnvHub/EnvHub-AppStore.entitlements</span>
+MARKETING_VERSION = <span class="g">1.0.0</span>
+CURRENT_PROJECT_VERSION = <span class="g">2</span>
+INFOPLIST_KEY_NSHumanReadableCopyright = <span class="g">"© 2026 Abdullah Alhaider"</span>
+INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = <span class="g">NO</span>
+DEVELOPMENT_TEAM = <span class="o">&lt;your Apple Developer Program team&gt;</span></pre>
+      </div>
+
+      <div class="blocker">
+        <span class="num">BLOCKER 02</span>
+        <h4>Resolve the team mismatch, get distribution signing</h4>
+        <p>The project says team <span class="k">G69L3HCQBT</span> but your Apple Development certificate is under <span class="k">7JEEBG8S88</span>. Mac App Store submission needs a paid Apple Developer Program team, an <b>Apple Distribution</b> certificate, and a Mac App Store provisioning profile that includes the app group.</p>
+      </div>
+
+      <div class="blocker">
+        <span class="num">BLOCKER 03</span>
+        <h4>App Group ID must match the final team</h4>
+        <p>On macOS, App Group IDs are prefixed by the <b>team ID</b>. <span class="k">G69L3HCQBT.net.alhaider.EnvHub</span> is hardcoded in <b>three places</b>: <span class="k">EnvHubStore.appGroupID</span> (Sources/Core/EnvHubStore.swift), <span class="k">EnvHub-AppStore.entitlements</span>, and <span class="k">EnvHub-DeveloperID.entitlements</span>. If you ship under any other team, update all three together — otherwise the shared store silently falls back and the CLI and app stop seeing the same library.</p>
+      </div>
+
+      <div class="blocker">
+        <span class="num" style="color:var(--green)">BLOCKER 04 · ✅ RESOLVED 2026-07-11</span>
+        <h4>Version strings are behind</h4>
+        <p><span class="k">MARKETING_VERSION = 0.0.1</span> and <span class="k">Core.version = "0.0.1"</span>, but Homebrew already shipped <b>0.2.0</b>. Go to <b>1.0.0</b> for the store debut (update both, keep them in lockstep — app and CLI share the SwiftData schema).</p>
+      </div>
+
+      <div class="blocker">
+        <span class="num">BLOCKER 05</span>
+        <h4>Register IDs + create the App Store Connect record</h4>
+        <p>Portal: register bundle ID <span class="k">net.alhaider.EnvHub</span> with the App Groups capability, and the group itself. ASC: create the app (name <b>EnvHub</b>, SKU e.g. <span class="k">envhub-mac-001</span>). The name was free on the App Store as of 2026-07-11.</p>
+      </div>
+
+      <div class="blocker">
+        <span class="num">BLOCKER 06</span>
+        <h4>Privacy policy URL must be live</h4>
+        <p>ASC requires a working URL. <span class="k">PRIVACY.md</span> is drafted in the repo root — commit it and push to <b>main</b> so <a href="https://github.com/cs4alhaider/EnvHub/blob/main/PRIVACY.md">github.com/cs4alhaider/EnvHub/blob/main/PRIVACY.md</a> resolves before you submit.</p>
+      </div>
+
+      <h3 style="margin-top:30px"><span class="dot" style="background:var(--amber)"></span>Recommended (not blocking)</h3>
+
+      <div class="blocker amber" style="margin-top:4px">
+        <span class="num">REC 01 · REAL BUG</span>
+        <h4>Sandbox kills gitignore UX it was designed to keep</h4>
+        <p><span class="k">GitService.findRepoRoot</span> shells out to <span class="k">git rev-parse</span>, which the sandbox guard disables — so in the App Store build <span class="k">repoRoot()</span> is always nil, <span class="k">GitInfo.isRepo</span> is always false, the sandbox guard inside <span class="k">info()</span> is dead code, and the “add to .gitignore” checkbox in New File never appears even though it's plain file I/O that works sandboxed. Fix with filesystem-based detection:</p>
+        <pre><span class="c">// GitService.findRepoRoot — sandbox-safe repo detection</span>
+<span class="g">if</span> AppSandbox.isActive {
+    <span class="g">var</span> dir = folder.standardizedFileURL
+    <span class="g">while</span> dir.path != <span class="o">"/"</span> {
+        <span class="c">// .git is a dir in normal checkouts, a file in worktrees</span>
+        <span class="g">if</span> FileManager.default.fileExists(atPath: dir.appending(path: <span class="o">".git"</span>).path) { <span class="g">return</span> dir }
+        dir = dir.deletingLastPathComponent()
+    }
+    <span class="g">return</span> <span class="o">nil</span>
+}
+<span class="c">// …existing rev-parse path for the unsandboxed edition</span></pre>
+      </div>
+      <div class="blocker amber">
+        <span class="num">REC 02</span>
+        <h4>Dual-license note for the GPL</h4>
+        <p>You own 100% of the copyright, so App Store distribution is legally yours to grant — add one line to the README/LICENSE stating that official binaries on the App Store are additionally offered under Apple's standard EULA. Prevents the classic “GPL app pulled from the store” drama (VLC, 2011).</p>
+      </div>
+      <div class="blocker amber">
+        <span class="num">REC 03</span>
+        <h4>Deployment target macOS 26.5 shrinks the audience</h4>
+        <p>Only Macs on the very latest OS can install. Deliberate choice given the SwiftUI APIs you use — just know the store page will show “Requires macOS 26.5 or later.”</p>
+      </div>
+      <div class="blocker amber">
+        <span class="num">REC 04</span>
+        <h4>Description below is written for the sandboxed edition</h4>
+        <p>It deliberately omits the git-leak guard, whole-machine scanning, and the bundled CLI — Developer ID-only features. Don't paste marketing copy from the README, which advertises all three.</p>
+      </div>
+      <div class="blocker amber">
+        <span class="num">REC 05</span>
+        <h4>After merging, update the live Homebrew formula</h4>
+        <p>This branch moved the CLI to <span class="k">cli/</span> — the tap formula needs <span class="k">--package-path cli</span> when app-store-prep merges to main, or <span class="k">brew install</span> breaks.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SCREENSHOTS ================= -->
+<section id="screenshots">
+  <div class="eyebrow"><b># 03</b> · SCREENSHOTS · 2880 × 1800 · PNG · NO ALPHA · READY TO UPLOAD</div>
+  <h2>Eight shots, one story: your secrets, organized.</h2>
+  <p class="lede">Captured from the real app running with staged demo data (every value is fake, and masked by the app anyway), then framed at exactly 2880×1800 — Apple's largest accepted Mac size; App Store Connect scales it to the smaller display sizes automatically. Files live in <a href="screenshots/">appstore-kit/screenshots/</a>. Click any shot to inspect it full-size. Upload them in this order.</p>
+
+  <div class="gallery">
+    <figure><img src="screenshots/envhub-mac-01.png" alt="Shot 1 — hero" loading="lazy">
+      <figcaption><b>1 · Hero — every .env file, one home</b><span>envhub-mac-01.png</span></figcaption></figure>
+    <figure><img src="screenshots/envhub-mac-02.png" alt="Shot 2 — Quick Open" loading="lazy">
+      <figcaption><b>2 · Quick Open across projects</b><span>envhub-mac-02.png</span></figcaption></figure>
+    <figure><img src="screenshots/envhub-mac-03.png" alt="Shot 3 — save review" loading="lazy">
+      <figcaption><b>3 · Save review with diff + .bak</b><span>envhub-mac-03.png</span></figcaption></figure>
+    <figure><img src="screenshots/envhub-mac-04.png" alt="Shot 4 — dashboard" loading="lazy">
+      <figcaption><b>4 · Workspace dashboard</b><span>envhub-mac-04.png</span></figcaption></figure>
+    <figure><img src="screenshots/envhub-mac-05.png" alt="Shot 5 — custom environments" loading="lazy">
+      <figcaption><b>5 · Custom environments</b><span>envhub-mac-05.png</span></figcaption></figure>
+    <figure><img src="screenshots/envhub-mac-06.png" alt="Shot 6 — native tabs" loading="lazy">
+      <figcaption><b>6 · Native tabs &amp; windows</b><span>envhub-mac-06.png</span></figcaption></figure>
+    <figure><img src="screenshots/envhub-mac-07.png" alt="Shot 7 — file details" loading="lazy">
+      <figcaption><b>7 · File details &amp; backups</b><span>envhub-mac-07.png</span></figcaption></figure>
+    <figure><img src="screenshots/envhub-mac-08.png" alt="Shot 8 — privacy" loading="lazy">
+      <figcaption><b>8 · Private &amp; open source</b><span>envhub-mac-08.png</span></figcaption></figure>
+  </div>
+
+  <div class="card shotnote">
+    <h3><span class="dot" style="background:var(--blue)"></span>Upload notes</h3>
+    <ul class="check">
+      <li><div>In ASC → your app → version → <b>App Previews and Screenshots</b>, drag all 8 into the Mac screenshot well — 2880×1800 is accepted as-is (16:10; also valid: 2560×1600, 1440×900, 1280×800).</div></li>
+      <li><div>Order matters: the first two dominate the product page and search cards. Keep 01 (hero) and 02 (Quick Open) first.</div></li>
+      <li><div>Raw, unframed window captures are in <a href="raw/">appstore-kit/raw/</a> if you ever want to re-frame with different copy.</div></li>
+      <li><div>Demo data disclosure for App Review is already included in the review notes below.</div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= METADATA ================= -->
+<section id="metadata">
+  <div class="eyebrow"><b># 04</b> · METADATA.ENV · EVERY ASC FIELD, COPY-PASTE READY</div>
+  <h2>The listing, written and within limits.</h2>
+  <p class="lede">Character counters run live against Apple's limits — everything below is green. Copy buttons grab the exact text.</p>
+
+  <div class="field">
+    <header><b>App Name</b><span class="lim" data-limit="30"></span><button class="copybtn">copy</button></header>
+    <div class="val" data-field>EnvHub — .env File Manager</div>
+    <div class="note">“EnvHub” alone also works; the suffix buys search relevance for “.env” and “file manager”. Checked free on the App Store 2026-07-11.</div>
+  </div>
+
+  <div class="field">
+    <header><b>Subtitle</b><span class="lim" data-limit="30"></span><button class="copybtn">copy</button></header>
+    <div class="val" data-field>Every .env file, one window</div>
+  </div>
+
+  <div class="field">
+    <header><b>Promotional Text</b><span class="lim" data-limit="170"></span><button class="copybtn">copy</button></header>
+    <div class="val" data-field>EnvHub 1.0: every .env file on your Mac in one fast, native app. Masked values, safe saves with automatic backups, encrypted sharing — and zero telemetry.</div>
+    <div class="note">Editable any time without a new build — use it for launch news later.</div>
+  </div>
+
+  <div class="field">
+    <header><b>Description</b><span class="lim" data-limit="4000"></span><button class="copybtn">copy</button></header>
+    <div class="val" data-field>Every .env file on your Mac, in one fast, native app.
+
+EnvHub gives the files that hold your API keys, database URLs and feature flags a proper home. Add your project folders — or scan a folder you choose — and EnvHub organizes every .env, .env.local, .env.production and friends into projects, workspaces and color-coded environments.
+
+A REAL EDITOR FOR ENV FILES
+• A Key / Value / Comment table with inline editing — the comment above each entry is a first-class column that survives every save
+• Values are masked by default; reveal them one at a time, only when you need to
+• Raw text mode when you'd rather edit the file directly
+• Create new files from scratch, or from an existing file's keys with the values stripped — a perfect .env.example in one click
+
+SAVE WITHOUT FEAR
+• Review a clear diff — added, changed, removed — before anything touches disk
+• Every save keeps a .bak backup right next to the file
+• Files are rewritten faithfully: order, blank lines and comments preserved byte-for-byte
+
+FIND ANYTHING, INSTANTLY
+• Quick Open (⇧⌘O) searches keys, values, comments and filenames across every project at once
+• Results are grouped by project and colored by environment
+• Decide per environment what search may show — keep production values out of results entirely
+
+ORGANIZED LIKE A MAC APP SHOULD BE
+• Workspaces group projects in the sidebar — drag, drop, pin favorites, multi-select
+• Native macOS tabs and windows: open each client's stack side by side
+• Workspace dashboards count projects, files and variables at a glance
+
+YOUR ENVIRONMENTS, YOUR RULES
+• Development, Staging, Production, Local and Example ship as defaults
+• Add your own — UAT, Pre-Prod, anything — with custom names, colors and ordering
+• Filename rules decide classification; Example templates are marked safe to commit
+
+SHARE SAFELY
+• Export a file, a project or your whole library as an encrypted .envenc — scrypt key derivation + AES-256-GCM, entirely on your Mac
+• Import an .envenc to restore everything on a new machine
+• Compare two environments side by side to catch missing keys before they bite in production
+
+PRIVATE BY DESIGN
+• No accounts, no backend, no telemetry — EnvHub never makes a network request
+• Your files stay exactly where they are on disk; EnvHub stores only its own metadata
+• Free and open source — read every line at github.com/cs4alhaider/EnvHub
+
+Built for macOS 26 with Swift 6 and SwiftUI.</div>
+    <div class="note">Written for the sandboxed App Store edition: no git-guard, no whole-disk scan, no bundled CLI claims.</div>
+  </div>
+
+  <div class="field">
+    <header><b>Keywords</b><span class="lim" data-limit="100"></span><button class="copybtn">copy</button></header>
+    <div class="val mono" data-field>env,dotenv,environment,variables,secrets,api key,developer tools,config,editor,.env,manager</div>
+    <div class="note">No need to repeat “EnvHub” — the app name is already indexed. Comma-separated, no wasted spaces.</div>
+  </div>
+
+  <div class="field">
+    <header><b>What's New (v1.0.0)</b><span class="lim" data-limit="4000"></span><button class="copybtn">copy</button></header>
+    <div class="val" data-field>Welcome to EnvHub 1.0 — the first Mac App Store release.
+
+• Projects, workspaces and pinned favorites in a native sidebar
+• A real table editor with masked values and first-class comments
+• Save review: see added / changed / removed before anything is written — with an automatic .bak backup
+• Quick Open (⇧⌘O) search across every project
+• Custom environments with your own names, colors and ordering
+• Encrypted .envenc export and import (scrypt + AES-256-GCM)
+• 100% offline, open source, zero telemetry</div>
+  </div>
+
+  <div class="field">
+    <header><b>App Review Notes</b><span class="lim" data-limit="4000"></span><button class="copybtn">copy</button></header>
+    <div class="val" data-field>EnvHub is a fully offline developer utility for organizing and editing .env (dotenv) configuration files. There are no accounts and no server component, so no demo credentials are required.
+
+How to test: create any folder containing a file named ".env" with a few KEY=value lines, then click "Add Project…" in EnvHub and select that folder. The app runs in the App Sandbox; folder access is granted through the standard open panel and persisted with security-scoped bookmarks.
+
+All "secret" values visible in the app and screenshots are fabricated demo data, and the app masks values by default.
+
+Encryption: the optional export feature encrypts files locally using Apple's CryptoKit (AES-256-GCM, scrypt key derivation). The app makes no network connections of any kind, and ITSAppUsesNonExemptEncryption is set to NO accordingly.
+
+EnvHub is open source; the developer holds all rights and additionally licenses App Store binaries under Apple's standard EULA. Source: github.com/cs4alhaider/EnvHub</div>
+  </div>
+
+  <div class="field">
+    <header><b>Everything else</b><button class="copybtn" style="visibility:hidden">copy</button></header>
+    <div class="kv"><div class="k">PRIMARY_CATEGORY</div><div class="v"><b>Developer Tools</b></div></div>
+    <div class="kv"><div class="k">SECONDARY_CATEGORY</div><div class="v"><b>Utilities</b> (optional)</div></div>
+    <div class="kv"><div class="k">PRICE</div><div class="v"><b>Free</b> · all territories</div></div>
+    <div class="kv"><div class="k">AGE_RATING</div><div class="v"><b>4+</b> — answer “No” to every content question</div></div>
+    <div class="kv"><div class="k">COPYRIGHT</div><div class="v"><b>© 2026 Abdullah Alhaider</b></div></div>
+    <div class="kv"><div class="k">SUPPORT_URL</div><div class="v"><b>https://github.com/cs4alhaider/EnvHub/issues</b></div></div>
+    <div class="kv"><div class="k">MARKETING_URL</div><div class="v"><b>https://github.com/cs4alhaider/EnvHub</b> (optional)</div></div>
+    <div class="kv"><div class="k">PRIVACY_POLICY_URL</div><div class="v"><b>https://github.com/cs4alhaider/EnvHub/blob/main/PRIVACY.md</b> — push PRIVACY.md first</div></div>
+    <div class="kv"><div class="k">APP_PRIVACY</div><div class="v"><b>Data Not Collected</b> — in the App Privacy questionnaire answer “No, we do not collect data from this app”</div></div>
+    <div class="kv"><div class="k">EXPORT_COMPLIANCE</div><div class="v">Uses encryption: <b>Yes</b> → only exempt/standard algorithms (Apple CryptoKit): <b>Yes</b> → qualifies for exemption. With <b>ITSAppUsesNonExemptEncryption = NO</b> in the build, ASC won't even ask per-build</div></div>
+    <div class="kv"><div class="k">SKU</div><div class="v"><b>envhub-mac-001</b> (any unique string; invisible to users)</div></div>
+  </div>
+</section>
+
+<!-- ================= SUBMIT ================= -->
+<section id="submit">
+  <div class="eyebrow"><b># 05</b> · SUBMISSION · FROM THIS BRANCH TO “WAITING FOR REVIEW”</div>
+  <h2>The path to submit, in nine steps.</h2>
+
+  <div class="step"><div class="n">01</div><div>
+    <h4>Fix the project (Blockers 01–04)</h4>
+    <p>In Xcode: add the <code>AppStore</code> configuration with sandbox + entitlements + team, bump versions to <code>1.0.0</code>, set copyright and <code>ITSAppUsesNonExemptEncryption</code>. Verify <code>PrivacyInfo.xcprivacy</code> shows under the EnvHub target (it was added to the synced folder today — it should appear automatically).</p>
+  </div></div>
+  <div class="step"><div class="n">02</div><div>
+    <h4>Developer portal: IDs &amp; capabilities</h4>
+    <p>Register bundle ID <code>net.alhaider.EnvHub</code> with the App Groups capability; register the group (team-prefixed). Update the three hardcoded group references if your team isn't G69L3HCQBT (Blocker 03).</p>
+  </div></div>
+  <div class="step"><div class="n">03</div><div>
+    <h4>Publish the privacy policy</h4>
+    <p>Commit <code>PRIVACY.md</code> (repo root, drafted) and push to main. Confirm the URL renders in a logged-out browser.</p>
+  </div></div>
+  <div class="step"><div class="n">04</div><div>
+    <h4>Create the ASC app record</h4>
+    <p>App Store Connect → My Apps → “+” → New App → macOS, name <b>EnvHub</b>, bundle ID, SKU <code>envhub-mac-001</code>, English (or your primary locale).</p>
+  </div></div>
+  <div class="step"><div class="n">05</div><div>
+    <h4>Archive &amp; upload</h4>
+    <p>Xcode → Product → Archive (AppStore configuration) → Organizer → <b>Distribute App → App Store Connect → Upload</b>. Automatic signing with the ADP team creates the provisioning profile with the app group. Wait for processing (~10 min).</p>
+  </div></div>
+  <div class="step"><div class="n">06</div><div>
+    <h4>Fill the version page</h4>
+    <p>Paste name, subtitle, promo text, description, keywords, URLs and What's New from <a href="#metadata">#metadata.env</a>. Upload the 8 screenshots in order. Set copyright.</p>
+  </div></div>
+  <div class="step"><div class="n">07</div><div>
+    <h4>App Privacy + Pricing</h4>
+    <p>Privacy questionnaire → “Data Not Collected”. Pricing → Free, all territories. Age rating → 4+.</p>
+  </div></div>
+  <div class="step"><div class="n">08</div><div>
+    <h4>Attach the build + review notes</h4>
+    <p>Select the processed build, paste the App Review Notes, and answer export compliance if asked (standard/exempt encryption only).</p>
+  </div></div>
+  <div class="step"><div class="n">09</div><div>
+    <h4>Submit for Review</h4>
+    <p>First macOS reviews typically take 1–3 days. If rejected, it's almost always a question, not a verdict — answer in Resolution Center and resubmit.</p>
+  </div></div>
+</section>
+
+<!-- ================= ASSETS ================= -->
+<section id="assets">
+  <div class="eyebrow"><b># 06</b> · ASSETS · WHAT WAS CREATED &amp; WHERE IT LIVES</div>
+  <h2>Everything this kit touched.</h2>
+  <table>
+    <thead><tr><th>Path</th><th>What it is</th></tr></thead>
+    <tbody>
+      <tr><td>appstore-kit/index.html</td><td>This page. Untracked — commit it or keep it local, your call.</td></tr>
+      <tr><td>appstore-kit/screenshots/envhub-mac-0{1–8}.png</td><td>Final App Store screenshots, 2880×1800 PNG, no alpha — upload these.</td></tr>
+      <tr><td>appstore-kit/raw/*.png</td><td>Raw window captures (2× Retina) for future re-framing.</td></tr>
+      <tr><td>EnvHub/EnvHub/PrivacyInfo.xcprivacy</td><td><b>New file (uncommitted)</b> — privacy manifest: no tracking, no collection; declares UserDefaults (CA92.1) and file-timestamp (DDA9.1, 3B52.1) required-reason APIs.</td></tr>
+      <tr><td>PRIVACY.md</td><td><b>New file (uncommitted)</b> — privacy policy for the required ASC URL. Push to main before submitting.</td></tr>
+      <tr><td>~/Developer/acme-* (+5 more)</td><td>Demo fixture folders used for the screenshots — deleted again after capture. Screenshot store was isolated; your real EnvHub library was never touched.</td></tr>
+    </tbody>
+  </table>
+
+  <footer>
+    Generated 2026-07-11 by Claude Code · branch app-store-prep @ ed28077 · demo values in all screenshots are fabricated<br>
+    Name-availability sources: <a href="https://apps.apple.com/us/app/envi/id1519403868">apps.apple.com/…/envi</a> · <a href="https://apps.apple.com/us/app/env/id6478288375">apps.apple.com/…/env</a> · <a href="https://envhub.net/">envhub.net</a> (web/CLI product, not on the App Store)
+  </footer>
+</section>
+
+</main>
+</div>
+
+<dialog id="lb"><img id="lbimg" alt=""></dialog>
+
+<script>
+  // ---- live character counters ----
+  document.querySelectorAll('.field').forEach(f => {
+    const lim = f.querySelector('.lim'), val = f.querySelector('[data-field]');
+    if (lim && val) {
+      const max = +lim.dataset.limit, n = val.textContent.trim().length;
+      lim.textContent = n + ' / ' + max;
+      lim.classList.toggle('ok', n <= max);
+      if (n > max) lim.style.color = 'var(--red)';
+    }
+  });
+  // ---- copy buttons ----
+  document.querySelectorAll('.copybtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = btn.closest('.field').querySelector('[data-field]');
+      if (!val) return;
+      const text = val.textContent.trim();
+      const done = () => { btn.textContent = 'copied ✓'; btn.classList.add('done');
+        setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('done'); }, 1600); };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(done).catch(() => fallback());
+      } else fallback();
+      function fallback() {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        ta.remove();
+      }
+    });
+  });
+  // ---- lightbox ----
+  const lb = document.getElementById('lb'), lbimg = document.getElementById('lbimg');
+  document.querySelectorAll('.gallery img').forEach(img => {
+    img.addEventListener('click', () => { lbimg.src = img.src; lb.showModal(); });
+  });
+  lb.addEventListener('click', () => lb.close());
+  // ---- scroll-spy ----
+  const links = [...document.querySelectorAll('#nav a')];
+  const map = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => { if (e.isIntersecting) {
+      links.forEach(a => a.classList.remove('active'));
+      map.get(e.target.id)?.classList.add('active');
+    }});
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  document.querySelectorAll('main section').forEach(s => spy.observe(s));
+</script>
+</body>
+</html>
