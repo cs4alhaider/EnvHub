@@ -1,22 +1,24 @@
-# Homebrew distribution plan
+# Homebrew distribution (CLI only)
 
-Two installables, one tap:
+The **app ships exclusively on the Mac App Store**
+(https://apps.apple.com/app/id6788664509). Homebrew distributes just the CLI:
 
 ```sh
 brew tap cs4alhaider/tap
 brew install envhub            # the CLI
-brew install --cask envhub-app # the macOS app (once notarized releases exist)
 ```
 
-## 1. Create the tap
+## 1. The tap
 
 A tap is just a repo named `homebrew-tap` under your account:
 
 ```
 github.com/cs4alhaider/homebrew-tap
-├── Formula/envhub.rb      ← template: docs/distribution/envhub.rb
-└── Casks/envhub-app.rb    ← template: docs/distribution/envhub-app.rb
+└── Formula/envhub.rb      ← template: docs/distribution/envhub.rb
 ```
+
+(The old `Casks/envhub-app.rb` is retired — remove it from the tap; the app is
+App Store-only.)
 
 ## 2. Release flow (per version)
 
@@ -24,27 +26,18 @@ github.com/cs4alhaider/homebrew-tap
 2. **CLI artifact** (until CI does it):
    ```sh
    swift build -c release --product envhub --package-path EnvHubCLI
-   codesign --sign "Developer ID Application: <NAME> (G69L3HCQBT)" \
-            --options runtime --timestamp .build/release/envhub
-   ditto -c -k .build/release/envhub envhub-X.Y.Z-macos-arm64.zip
+   codesign --sign "Developer ID Application: <NAME> (<TEAM>)" \
+            --options runtime --timestamp EnvHubCLI/.build/release/envhub
+   ditto -c -k EnvHubCLI/.build/release/envhub envhub-X.Y.Z-macos-arm64.zip
    xcrun notarytool submit envhub-X.Y.Z-macos-arm64.zip \
          --keychain-profile envhub-notary --wait
    shasum -a 256 envhub-X.Y.Z-macos-arm64.zip
    gh release upload vX.Y.Z envhub-X.Y.Z-macos-arm64.zip
    ```
-3. **App artifact**:
-   ```sh
-   xcodebuild -project EnvHub/EnvHub.xcodeproj -scheme EnvHub archive \
-              -archivePath build/EnvHub.xcarchive
-   xcodebuild -exportArchive -archivePath build/EnvHub.xcarchive \
-              -exportOptionsPlist docs/distribution/ExportOptions.plist \
-              -exportPath build/export        # method: developer-id
-   ditto -c -k --keepParent build/export/EnvHub.app EnvHub-X.Y.Z.zip
-   xcrun notarytool submit EnvHub-X.Y.Z.zip --keychain-profile envhub-notary --wait
-   xcrun stapler staple build/export/EnvHub.app   # re-zip after stapling
-   gh release upload vX.Y.Z EnvHub-X.Y.Z.zip
-   ```
-4. Update `url`/`sha256`/`version` in the tap's formula + cask, push the tap.
+3. Update `url`/`sha256`/`version` in the tap's formula, push the tap.
+   ⚠️ From v1.0.0 the formula must build with `--package-path EnvHubCLI`
+   (the CLI moved out of the root package) — the updated template is in
+   `docs/distribution/envhub.rb`.
 
 ## 3. Formula strategy
 
@@ -55,16 +48,12 @@ github.com/cs4alhaider/homebrew-tap
   release, switch the formula to download the binary (commented variant included in
   the template). Instant installs, no Xcode requirement.
 - **Phase 3 — automation**: a GitHub Actions `release.yml` on tag push runs tests,
-  builds/signs/notarizes both artifacts (App Store Connect API key as secrets),
-  uploads them, and opens a PR against the tap with the new sha256s.
+  builds/signs/notarizes the CLI, uploads it, and opens a PR against the tap with
+  the new sha256.
 
 ## 4. Requirements & gotchas
 
-- The app is **not sandboxed** (it must read `.env` files anywhere) → it can never
-  ship in the Mac App Store, which makes Homebrew + GitHub Releases the primary
-  channel. Notarization is still required so Gatekeeper allows it.
-- `depends_on macos: :tahoe` on both — the codebase targets macOS 26 APIs.
-- The CLI and app share the data store; keep them on the same version (see
-  `CLI-PUBLISHING.md`).
-- Submitting the cask to the official `homebrew/cask` needs 30+ GitHub stars and a
-  notarized app; start in the personal tap and graduate later.
+- **The app is Mac App Store-only** (sandboxed edition). Homebrew's job is the CLI.
+- `depends_on macos: :tahoe` — the codebase targets macOS 26 APIs.
+- The CLI and app share the data store (the `group.net.alhaider.EnvHub` container);
+  keep them on the same version (see `CLI-PUBLISHING.md`).

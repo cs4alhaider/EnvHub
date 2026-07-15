@@ -74,9 +74,6 @@ your Mac.
   blank lines, ordering, even CRLF endings survive every save.
 - **↔️ Diff** — read-only, side-by-side comparison of two environments, so the key that's
   missing in Production never surprises you again.
-- **🛡️ Git-leak guard** *(Homebrew edition)* — when a `.env` file is tracked by git, EnvHub
-  warns you and can **unstage + gitignore** it in one click. Example/template files are
-  exempt.
 - **⌨️ CLI** — `scan`, `list`, `get`, `export`, `import`, `workspace`, `add`, `open`, and
   `store` on the exact same core, sharing the same data as the app. `envhub add .` adds a
   folder as a project; `envhub .` opens it in a window without adding it.
@@ -120,24 +117,18 @@ your Mac.
 - **Script it** — `envhub .` to open the current folder in the app, `envhub get KEY --mask`
   in a shell, `envhub store` to back up the database.
 
-## Requirements & editions
+## Requirements
 
-Requires **macOS 26 (Tahoe)**. EnvHub ships as two editions built from the same code:
-
-| | **Mac App Store** | **Homebrew / direct** |
-| --- | --- | --- |
-| Runs in the App Sandbox | ✓ — you grant folders via the standard open panel, remembered across launches | — unsandboxed, so it can scan anywhere on disk |
-| Everything above (editor, workspaces, search, environments, scanner, encrypted sharing, diff) | ✓ | ✓ |
-| Git-leak guard + one-click `.gitignore` | — | ✓ |
-| Bundled `envhub` CLI + in-app installer | — (install the CLI via Homebrew alongside) | ✓ |
-
-Both editions read and write the **same shared library**, so mixing them — or the app with
-the Homebrew CLI — just works. In the unsandboxed edition, macOS may ask before scanning
-Desktop / Documents / Downloads: that's macOS asking, not EnvHub phoning home.
+- **macOS 26 (Tahoe)**.
+- EnvHub runs in the **App Sandbox**: grant a project folder once through the standard
+  open panel (or the scanner's folder picker) and macOS remembers it across launches.
+  Nothing else to configure, and nothing ever leaves your Mac.
+- The Homebrew `envhub` CLI reads and writes the **same shared library** as the app —
+  install both and they just work together.
 
 ## Install
 
-### Mac App Store (recommended)
+### Mac App Store — the app
 
 <a href="https://apps.apple.com/app/id6788664509">
   <img src="docs/branding/mac-app-store-badge.svg" alt="Download on the Mac App Store" height="52">
@@ -145,14 +136,10 @@ Desktop / Documents / Downloads: that's macOS asking, not EnvHub phoning home.
 
 *Currently in App Review — the badge goes live the moment Apple flips the switch.*
 
-### Homebrew
+### Homebrew — the CLI
 
 ```sh
-# The CLI — available today
 brew install cs4alhaider/tap/envhub
-
-# The app (unsandboxed edition, bundles the CLI) — coming with the next notarized build
-brew install --cask cs4alhaider/tap/envhub-app
 ```
 
 Prefer building it yourself? Everything you need is in

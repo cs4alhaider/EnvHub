@@ -6,8 +6,12 @@
 > this file; don't re-derive features from memory.
 >
 > **Conventions**
-> - `[MAS]` = App Store (sandboxed) edition · `[DevID]` = Developer ID / Homebrew
->   (unsandboxed) edition. Untagged = both editions.
+> - `[MAS]` = App Store (sandboxed) edition · `[DevID]` = unsandboxed builds.
+>   Untagged = both.
+> - **2026-07-15 distribution decision: the app ships ONLY on the Mac App Store**
+>   (id 6788664509; the Homebrew app cask is retired). `[DevID]` now means
+>   "source-build only — NOT in any distributed app; do NOT feature on the
+>   website." The CLI still ships via Homebrew.
 > - `⌘…` = keyboard shortcut · `CLI:` = envhub command equivalent.
 > - `shot:` = existing screenshot asset to reuse (`appstore-kit/raw/…`,
 >   `docs/screenshots/…`) · `shot-needed:` = capture later for the zoomed section.
@@ -352,18 +356,18 @@
 
 ---
 
-## 15. Edition matrix (pricing/download section)
+## 15. Distribution (download section)
 
-| Capability | App Store `[MAS]` | Developer ID / Homebrew `[DevID]` |
+| What | Where | Price |
 | --- | --- | --- |
-| Everything in sections 1–7, 9–12 | ✓ | ✓ |
-| Folder access | granted via open panel (persisted) | full disk (macOS prompts for protected folders) |
-| Git-leak guard + gitignore actions | — | ✓ |
-| Bundled CLI + in-app installer | — (Homebrew CLI works alongside) | ✓ |
-| Sandboxed | ✓ | — |
-| Price | Free | Free |
+| **The app** | **Mac App Store only** — https://apps.apple.com/app/id6788664509 | Free |
+| **The CLI** | Homebrew: `brew install cs4alhaider/tap/envhub` (or build from source) | Free |
 
-Both editions share the same store — installing both is safe.
+- The app and CLI share one library (App Group container) — installing both just works.
+- The Homebrew **app cask is retired** (2026-07-15); the Developer ID release
+  pipeline was removed from the repo.
+- Git-leak guard and the bundled-CLI installer exist only in unsandboxed source
+  builds → **not part of the product story on the website**.
 
 ---
 
@@ -389,12 +393,13 @@ Both editions share the same store — installing both is safe.
 - **Assets to capture for zoom sections:** diff sheet (7), scan sheet (5),
   export sheet (6.1), git banner `[DevID]` (8), light-mode variants of hero
   shots (the site's light theme should show a light-mode app window).
-- **Honesty rule:** landing copy must work for both editions; git-guard and
-  bundled-CLI features always carry the Developer ID label.
-- **Proposed landing structure:** hero (icon + tagline + download buttons +
-  hero shot) → social-proof/credibility strip → 5 pillar acts (each: big
-  claim, zoomed screenshot crops, subfeature bullets) → CLI section (terminal
-  animation) → privacy/trust panel → edition matrix + download CTAs → footer.
+- **Honesty rule (updated 2026-07-15):** the website describes the Mac App
+  Store app + the Homebrew CLI, nothing else — git-guard and the bundled-CLI
+  installer are source-build extras and stay OFF the site entirely.
+- **Proposed landing structure:** hero (icon + tagline + App Store badge +
+  hero shot) → credibility strip → 5 pillar acts (each: big claim, zoomed
+  screenshot crops, subfeature bullets) → CLI section (terminal animation) →
+  privacy/trust panel → download CTA (App Store badge + brew one-liner) → footer.
 
 ---
 

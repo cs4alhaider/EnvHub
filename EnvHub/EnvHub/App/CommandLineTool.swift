@@ -3,9 +3,10 @@
 //  EnvHub
 //
 //  Installs the `envhub` CLI that ships inside the app bundle (Contents/Helpers/envhub)
-//  by symlinking it onto the user's PATH. Homebrew's cask does this automatically; this
-//  is for people who download the app directly. In non-release builds the CLI isn't
-//  bundled, so the action reports that cleanly.
+//  by symlinking it onto the user's PATH. Only relevant to unsandboxed source builds —
+//  the App Store edition hides this menu (sandboxed apps can't write to PATH dirs) and
+//  App Store users install the CLI via Homebrew instead. In non-release builds the CLI
+//  isn't bundled, so the action reports that cleanly.
 //
 
 import AppKit
