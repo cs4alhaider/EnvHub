@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="EnvHub — every .env file on your Mac, in one native app. Open source, local-only, no telemetry." />
+    <meta property="og:title" content="EnvHub — every .env file on your Mac. One home." />
+    <meta property="og:description" content="Projects, workspaces and environments — organized in a fast, native macOS app. Open source, offline, on the Mac App Store." />
+    <title>EnvHub — every .env file on your Mac. One home.</title>
+    <script>
+      // Theme boot: apply before first paint to avoid a flash.
+      (function () {
+        var stored = localStorage.getItem('envhub-theme');
+        var theme = stored || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
