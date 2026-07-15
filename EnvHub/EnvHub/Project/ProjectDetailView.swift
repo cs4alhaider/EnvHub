@@ -8,6 +8,7 @@
 
 import SwiftUI
 import SwiftData
+import AppKit
 import Core
 
 struct ProjectDetailView: View {
@@ -20,6 +21,9 @@ struct ProjectDetailView: View {
     @State private var selectedFile: URL?
     @State private var editor: EnvFileEditorModel?
     @State private var metadata = ProjectMetadata.empty
+
+    /// Sandboxed edition: the folder is unreadable and needs a re-grant.
+    @State private var needsAccessGrant = false
 
     // Sheets / confirmation
     @State private var pendingFile: URL?
@@ -48,7 +52,17 @@ struct ProjectDetailView: View {
                 GitTrackingBanner(fileURL: url) { unstageAndIgnore(url) }
             }
 
-            if let editor {
+            if needsAccessGrant {
+                // Sandboxed edition without a working bookmark (record predates the
+                // grant, was added by the CLI, or the folder moved).
+                ContentUnavailableView {
+                    Label("No Access to This Folder", systemImage: "lock")
+                } description: {
+                    Text("Grant this folder once so EnvHub can read and edit its env files. Everything stays on your Mac.")
+                } actions: {
+                    Button("Grant Access…") { grantAccess() }
+                }
+            } else if let editor {
                 EnvFileEditor(model: editor)
                     .id(editor.fileURL)
             } else {
@@ -177,6 +191,8 @@ struct ProjectDetailView: View {
     /// Re-list + classify the folder's env files, open an editor on `url` (or the first
     /// file in tab order), then refresh metadata off the main actor.
     private func reload(select url: URL?) async {
+        needsAccessGrant = AppSandbox.isActive
+            && !FileManager.default.isReadableFile(atPath: project.url.path(percentEncoded: false))
         let settings = EnvHubStore.settings(in: context)
         classified = ProjectLoader.envFiles(
             in: project.url,
@@ -216,6 +232,30 @@ struct ProjectDetailView: View {
         selectedFile = pendingFile
         openEditor(for: pendingFile)
         pendingFile = nil
+    }
+
+    /// Sandboxed re-grant: an open panel pre-aimed at the project folder. Accepting
+    /// the folder (or any parent, which covers it) refreshes the record's bookmark.
+    private func grantAccess() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = project.url
+        panel.prompt = "Grant Access"
+        panel.message = "Select “\(project.name)” to let EnvHub read and edit its env files"
+        guard panel.runModal() == .OK, let granted = panel.url else { return }
+
+        let canonical = ProjectStore.canonicalPath(for: project.url)
+        let grantedPath = ProjectStore.canonicalPath(for: granted)
+        guard canonical == grantedPath || canonical.hasPrefix(grantedPath + "/") else { return }
+
+        if let record = try? context.fetch(FetchDescriptor<ProjectRecord>()).first(where: {
+            ProjectStore.canonicalPath(for: $0.url) == canonical
+        }) {
+            record.bookmarkData = SecurityScopedBookmarks.make(for: granted)
+        }
+        Task { await reload(select: nil) }
     }
 
     private func unstageAndIgnore(_ url: URL) {

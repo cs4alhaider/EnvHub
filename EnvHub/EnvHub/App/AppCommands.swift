@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import Core
 
 struct AppCommands: Commands {
     @FocusedValue(\.appActions) private var actions
@@ -41,7 +42,11 @@ struct AppCommands: Commands {
         }
 
         CommandGroup(after: .systemServices) {
-            Button("Install Command Line Tool…") { CommandLineTool.installWithFeedback() }
+            // The sandboxed (App Store) edition neither bundles the CLI nor may
+            // write the /usr/local/bin symlink — Homebrew is the CLI channel there.
+            if !AppSandbox.isActive {
+                Button("Install Command Line Tool…") { CommandLineTool.installWithFeedback() }
+            }
         }
 
         CommandGroup(after: .help) {

@@ -58,6 +58,9 @@ struct RootView: View {
     /// A clicked workspace section shows its dashboard in the detail pane; selecting
     /// any project clears it (and vice versa).
     @State private var dashboardTarget: DashboardTarget?
+    /// Project records whose security-scoped bookmark is already active this
+    /// session (sandboxed edition only — see `armBookmarks`).
+    @State private var armedBookmarks: Set<UUID> = []
 
     /// Environment kinds excluded from search results (Settings → Search).
     private var searchExcludedKinds: Set<String> {
@@ -336,7 +339,10 @@ struct RootView: View {
         panel.message = "Choose one or more folders that contain .env files"
         guard panel.runModal() == .OK else { return }
         for url in panel.urls {
-            if let added = ProjectStore.addProject(at: url, to: context) {
+            // The panel grant is what makes a security-scoped bookmark creatable —
+            // it keeps the sandboxed edition's access alive across launches.
+            let bookmark = SecurityScopedBookmarks.make(for: url)
+            if let added = ProjectStore.addProject(at: url, to: context, bookmark: bookmark) {
                 selection = [added.id]
             }
         }
@@ -406,6 +412,7 @@ struct RootView: View {
     /// Rebuilds the in-memory search index (reads each project's env files once,
     /// off the main actor — see `SearchIndex.build`).
     private func rebuildIndex() async {
+        armBookmarks()
         let sources = projects.map { Project(id: $0.id, name: $0.name, path: $0.url) }
         let settings = EnvHubStore.settings(in: context)
         index = await SearchIndex.build(
@@ -413,5 +420,26 @@ struct RootView: View {
             rules: settings.classificationRules,
             patterns: settings.filenamePatterns
         )
+    }
+
+    /// Sandboxed edition: re-arm every project's security-scoped bookmark before
+    /// anything reads project files (the index build right after this, the editor
+    /// later). Runs before each index rebuild — cheap, idempotent per record, and
+    /// persists refreshed bookmarks for stale grants.
+    private func armBookmarks() {
+        guard AppSandbox.isActive else { return }
+        for record in projects where !armedBookmarks.contains(record.id) {
+            switch SecurityScopedBookmarks.startAccess(record.bookmarkData) {
+            case .notNeeded:
+                return
+            case .granted(_, let refreshed):
+                if let refreshed { record.bookmarkData = refreshed }
+                armedBookmarks.insert(record.id)
+            case .denied:
+                // No usable grant — ProjectDetailView offers "Grant Access…" when
+                // the folder turns out to be unreadable.
+                continue
+            }
+        }
     }
 }

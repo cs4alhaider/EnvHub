@@ -23,7 +23,7 @@ github.com/cs4alhaider/homebrew-tap
 1. Bump `Core.version`, tag `vX.Y.Z`, push the tag; create a GitHub Release.
 2. **CLI artifact** (until CI does it):
    ```sh
-   swift build -c release --product envhub
+   swift build -c release --product envhub --package-path EnvHubCLI
    codesign --sign "Developer ID Application: <NAME> (G69L3HCQBT)" \
             --options runtime --timestamp .build/release/envhub
    ditto -c -k .build/release/envhub envhub-X.Y.Z-macos-arm64.zip

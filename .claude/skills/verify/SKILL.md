@@ -16,14 +16,17 @@ APP=$(ls -dt ~/Library/Developer/Xcode/DerivedData/EnvHub-*/Build/Products/Debug
 codesign --force --deep -s - "$APP"
 ```
 
-`swift test` covers the package; it is NOT app verification.
+`swift test --package-path EnvHubKit` covers the package; it is NOT app verification.
 
 ## Isolated store (never touch the real library)
 
 ```bash
 mkdir -p /private/tmp/envhub-verify-store
-touch /private/tmp/envhub-verify-store/EnvHub.store   # MUST pre-touch: suppresses legacy-store import of the user's real projects
 ```
+
+Point `ENVHUB_STORE` at a file inside that directory. (Legacy-store import and
+file migration were removed 2026-07-13 — an isolated store now starts empty,
+no pre-touch needed.)
 
 ## Launch + capture
 

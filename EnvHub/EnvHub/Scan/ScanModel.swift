@@ -109,7 +109,12 @@ final class ScanModel {
     func addSelectedProjects(to context: ModelContext, workspaceID: UUID? = nil) -> Int {
         var added = 0
         for project in results where selected.contains(project.folder) {
-            if ProjectStore.addProject(at: project.folder, to: context, workspaceID: workspaceID) != nil {
+            // The scan root came from an open panel, so its grant is active — a
+            // bookmark for each discovered subfolder can be created while it is.
+            let bookmark = SecurityScopedBookmarks.make(for: project.folder)
+            if ProjectStore.addProject(
+                at: project.folder, to: context, workspaceID: workspaceID, bookmark: bookmark
+            ) != nil {
                 added += 1
             }
         }

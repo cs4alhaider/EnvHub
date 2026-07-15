@@ -20,7 +20,7 @@ Releases) while the code stays here. Revisit a repo split at 1.0 (criteria below
    tag. Two repos = a version-pin dance on every change while EnvHubKit's API is
    still moving.
 3. **The CLI is already independent where it matters.** It is a standalone SwiftPM
-   *product* (`swift build --product envhub`) that never links SwiftUI or the app.
+   *product* (`swift build --product envhub --package-path EnvHubCLI`) that never links SwiftUI or the app.
    Nothing about installation requires Xcode's app target.
 
 ## What "independent publishing" looks like (this plan)
@@ -32,7 +32,7 @@ Releases) while the code stays here. Revisit a repo split at 1.0 (criteria below
   skill folder. Built with:
 
   ```sh
-  swift build -c release --product envhub
+  swift build -c release --product envhub --package-path EnvHubCLI
   codesign --sign "Developer ID Application: <TEAM>" --options runtime --timestamp .build/release/envhub
   tar -czf envhub-<v>-macos-arm64.tar.gz -C .build/release envhub
   # notarize the tarball (see HOMEBREW.md), then: gh release upload v<v> …

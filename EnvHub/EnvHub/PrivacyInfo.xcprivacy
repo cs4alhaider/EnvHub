@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- EnvHub collects nothing, tracks nothing, and never talks to a server.
+	     The only declarations required are the "required reason" APIs the app
+	     touches locally: UserDefaults (its own settings) and file timestamps
+	     (shown to the user in the file-details popover). -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<!-- CA92.1: read/write the app's own preferences (@AppStorage). -->
+				<string>CA92.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<!-- DDA9.1: created/modified dates shown to the user (file info popover). -->
+				<string>DDA9.1</string>
+				<!-- 3B52.1: timestamps of files the user granted access to (.env files). -->
+				<string>3B52.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

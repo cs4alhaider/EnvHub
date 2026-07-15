@@ -2,7 +2,7 @@
 .DS_Store
 
 # Swift Package Manager
-/.build/
+.build/
 .swiftpm/
 
 # Xcode
