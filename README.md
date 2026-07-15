@@ -3,9 +3,9 @@
 </p>
 
 <p align="center">
-  <a href="#requirements"><img src="https://img.shields.io/badge/macOS-26%20Tahoe-black?logo=apple&logoColor=white" alt="macOS 26"></a>
+  <a href="#requirements--editions"><img src="https://img.shields.io/badge/macOS-26%20Tahoe-black?logo=apple&logoColor=white" alt="macOS 26"></a>
   <a href="#architecture"><img src="https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white" alt="Swift 6"></a>
-  <a href="#build--run"><img src="https://img.shields.io/badge/SwiftUI-native-2F6BF0" alt="SwiftUI"></a>
+  <img src="https://img.shields.io/badge/SwiftUI-native-2F6BF0" alt="SwiftUI">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0"></a>
   <img src="https://img.shields.io/badge/telemetry-none-brightgreen" alt="No telemetry">
 </p>
@@ -13,9 +13,17 @@
 <p align="center">
   A native <b>macOS</b> app — plus a companion CLI — that puts every <code>.env</code> file on your
   machine in one window.<br>
-  Structured editing, workspaces, cross-project search, a git-leak guard, and
+  Structured editing, workspaces, cross-project search, custom environments, and
   password-encrypted sharing.<br>
   <b>Open source, local-only, no accounts, no telemetry.</b>
+</p>
+
+<p align="center">
+  <a href="https://apps.apple.com/app/id6788664509">
+    <img src="docs/branding/mac-app-store-badge.svg" alt="Download on the Mac App Store" height="56">
+  </a>
+  <br>
+  <sub>Currently in App Review — releasing soon. The <a href="#install">Homebrew CLI</a> is available today.</sub>
 </p>
 
 ---
@@ -29,9 +37,9 @@
 Your `.env` files are scattered across dozens of projects, hold your most sensitive
 secrets, and are one careless `git add` away from a leak. EnvHub gathers them into a
 single, native window: a real editor instead of a text file, environments at a glance,
-search across every project, and a warning the moment a secret is tracked by git.
+and search across every project.
 
-And because it reads secrets across your whole machine, it's **open source on purpose** —
+And because it reads secrets across your machine, it's **open source on purpose** —
 you can read exactly what it does, build it yourself, and verify that nothing ever leaves
 your Mac.
 
@@ -40,28 +48,35 @@ your Mac.
 - **📁 Projects & workspaces** — every folder with `.env*` files, grouped into **Pinned**,
   your own **workspaces**, and **Others**. Collapsible sections (remembered across
   launches), drag-and-drop between them, multi-select to move or remove in bulk, and a
-  per-workspace **dashboard**. Single-click to open, **double-click for a separate window**.
-- **✏️ A real editor** — a Key / Value / **Comment** / status table with inline editing,
-  plus a raw "developer" text view. The Comment column is bound to the `# comment` line
-  above each key. Values are **masked** by default (safe to screen-share); reveal per-row
-  or all at once.
+  per-workspace **dashboard**. Single-click to open, **double-click for a separate window**,
+  ⌘-double-click for a **native tab**.
+- **✏️ A real editor** — a Key / Value / **Comment** table with inline editing, plus a raw
+  "developer" text view. The Comment column is bound to the `# comment` line above each
+  key. Values are **masked** by default (safe to screen-share); reveal per-row or all at
+  once.
+- **🧾 Save review** — ⌘S shows a clear diff (**added / changed / removed**, values *and*
+  comments) before anything touches disk, and every save keeps a `.bak` backup next to
+  the file.
 - **🏷️ Custom environments** — Development / Staging / Production / Local / Example ship by
   default, but you can **add your own** (UAT, pre-prod, …), rename them, set a **color**,
   and mark which are safe to commit. Files map to them via your own **editable regex rules**.
 - **🔎 Search everything** — type `gemini` and see every project whose keys, values,
   filenames, or names match, grouped by project. Or hit **⇧⌘O** for an Xcode-style
-  **Quick Open** popup and jump straight to a project.
-- **🛡️ Git-leak guard** — when a `.env` file is tracked by git, EnvHub warns you and can
-  **unstage + gitignore** it in one click. Example/template files are exempt.
+  **Quick Open** popup and jump straight to a project. Per-environment toggles can keep
+  production values out of results entirely.
 - **🔐 Encrypted sharing** — export a file, a project, or your **whole library** as a
   password-protected `.envenc` (**AES-256-GCM** + **scrypt**). Import recreates the files
   wherever you choose. Wrong passwords fail cleanly.
 - **⚡ Fast, safe scanner** — discover `.env` files across chosen folders. The walk is
   **parallel**, skips caches (`~/Library`, `node_modules`, …), can **stop early to review**,
   and never re-imports what you already have.
-- **🧯 Faithful save** — writes a `.bak` backup first, then rewrites the file **preserving
-  comments and blank lines**, keeping untouched lines byte-for-byte identical.
-- **↔️ Diff** — read-only, side-by-side comparison of two environments.
+- **🧯 Faithful save** — untouched lines are written back **byte-for-byte**: comments,
+  blank lines, ordering, even CRLF endings survive every save.
+- **↔️ Diff** — read-only, side-by-side comparison of two environments, so the key that's
+  missing in Production never surprises you again.
+- **🛡️ Git-leak guard** *(Homebrew edition)* — when a `.env` file is tracked by git, EnvHub
+  warns you and can **unstage + gitignore** it in one click. Example/template files are
+  exempt.
 - **⌨️ CLI** — `scan`, `list`, `get`, `export`, `import`, `workspace`, `add`, `open`, and
   `store` on the exact same core, sharing the same data as the app. `envhub add .` adds a
   folder as a project; `envhub .` opens it in a window without adding it.
@@ -96,57 +111,53 @@ your Mac.
 - **"Where did I put that key?"** — ⇧⌘O, type `stripe`, jump to the project that has it.
 - **Audit a secret across projects** — search a key name and see every project, environment,
   and file it appears in.
-- **Stop a leak before it ships** — the git guard flags a tracked `.env` and gitignores it
-  in one click.
 - **Onboard a teammate** — make a committed `.env.example` from a real file (keys, no
   values), or send them an encrypted `.envenc` and share the password out-of-band.
 - **Move a machine** — `export` your whole library to one `.envenc`, restore it on the new
   Mac with `import`.
 - **Organize a monorepo** — group frontend/backend/infra projects into workspaces; open
-  each in its own window.
+  each in its own tab or window.
 - **Script it** — `envhub .` to open the current folder in the app, `envhub get KEY --mask`
   in a shell, `envhub store` to back up the database.
 
-## Requirements
+## Requirements & editions
 
-- **macOS 26 (Tahoe)** and **Xcode 26+** (Swift 6.x).
-- EnvHub runs **without the App Sandbox** so it can read `.env` files across your home
-  directory. macOS may ask for **Full Disk Access** the first time you scan protected
-  locations (Desktop / Documents / Downloads) — that's macOS asking, not EnvHub phoning
-  home. Grant it in *System Settings → Privacy & Security → Full Disk Access*.
+Requires **macOS 26 (Tahoe)**. EnvHub ships as two editions built from the same code:
+
+| | **Mac App Store** | **Homebrew / direct** |
+| --- | --- | --- |
+| Runs in the App Sandbox | ✓ — you grant folders via the standard open panel, remembered across launches | — unsandboxed, so it can scan anywhere on disk |
+| Everything above (editor, workspaces, search, environments, scanner, encrypted sharing, diff) | ✓ | ✓ |
+| Git-leak guard + one-click `.gitignore` | — | ✓ |
+| Bundled `envhub` CLI + in-app installer | — (install the CLI via Homebrew alongside) | ✓ |
+
+Both editions read and write the **same shared library**, so mixing them — or the app with
+the Homebrew CLI — just works. In the unsandboxed edition, macOS may ask before scanning
+Desktop / Documents / Downloads: that's macOS asking, not EnvHub phoning home.
 
 ## Install
+
+### Mac App Store (recommended)
+
+<a href="https://apps.apple.com/app/id6788664509">
+  <img src="docs/branding/mac-app-store-badge.svg" alt="Download on the Mac App Store" height="52">
+</a>
+
+*Currently in App Review — the badge goes live the moment Apple flips the switch.*
 
 ### Homebrew
 
 ```sh
-# The CLI
+# The CLI — available today
 brew install cs4alhaider/tap/envhub
 
-# The app (installs the bundled CLI too) — coming with the next signed build
+# The app (unsandboxed edition, bundles the CLI) — coming with the next notarized build
 brew install --cask cs4alhaider/tap/envhub-app
 ```
 
-The CLI formula builds from source, so it needs **Xcode 26**. The app cask ships a
-notarized build (see [`scripts/`](scripts/NOTARIZE-SETUP.md) for the release pipeline).
-
-### Build from source
-
-```sh
-git clone https://github.com/cs4alhaider/EnvHub.git
-cd EnvHub
-
-# App: open in Xcode and Run (⌘R)
-open EnvHub/EnvHub.xcodeproj
-# …or: xcodebuild -project EnvHub/EnvHub.xcodeproj -scheme EnvHub -destination 'platform=macOS' build
-
-# CLI
-swift run --package-path EnvHubCLI envhub --help
-swift build -c release --package-path EnvHubCLI   # optimized CLI build (scrypt is much faster)
-
-# Tests
-swift test --package-path EnvHubKit   # 100 UI-free tests across all modules
-```
+Prefer building it yourself? Everything you need is in
+[CONTRIBUTING.md](CONTRIBUTING.md) — the whole project builds with Xcode 26 and
+`swift build`.
 
 ## CLI reference
 
@@ -226,8 +237,8 @@ EnvHubCLI/      envhub CLI package — one file per subcommand               →
   Concern modules depend only on `Model`; `Core` is the single facade; `Helper` is the only
   package target that imports SwiftUI, so the CLI never links a UI framework.
 - **Swift 6 strict concurrency.** Work that must leave the caller's actor — filesystem
-  walks, `git` spawns, scrypt, bulk parsing — is explicitly `@concurrent`, so views simply
-  `await` and stay responsive.
+  walks, scrypt, bulk parsing — is explicitly `@concurrent`, so views simply `await` and
+  stay responsive.
 - **Your `.env` files are the source of truth.** SwiftData stores only app state (projects,
   workspaces, rules, preferences) in one shared store the app and CLI both open.
 - **Crypto is dependency-free and auditable** — scrypt is implemented in-house on CryptoKit
@@ -263,7 +274,8 @@ tag appended to the ciphertext.
 
 ## Security notes
 
-- No network access, no telemetry, no accounts. Nothing leaves your machine.
+- No network access, no telemetry, no accounts. Nothing leaves your machine —
+  see the [privacy policy](PRIVACY.md).
 - Working `.env` files are stored as-is — encryption applies only to explicit `.envenc`
   export.
 - Lost `.envenc` passwords are unrecoverable by design.
@@ -277,7 +289,7 @@ tag appended to the ciphertext.
 | Search across projects (Quick Open) | ⇧⌘O |
 | Scan for `.env` files | ⇧⌘F |
 | Import `.envenc` | ⌘I |
-| Save file | ⌘S |
+| Save file (opens Save Review) | ⌘S |
 | Settings | ⌘, |
 
 ## Contributing
@@ -302,4 +314,5 @@ issues or pull requests even more so.
 
 ## License
 
-[GPL-3.0](LICENSE) © Abdullah Alhaider
+[GPL-3.0](LICENSE) © Abdullah Alhaider. Official binaries distributed through the
+Mac App Store are additionally offered under Apple's standard EULA.
