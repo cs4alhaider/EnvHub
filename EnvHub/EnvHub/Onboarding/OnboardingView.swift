@@ -45,6 +45,7 @@ struct OnboardingView: View {
         OnboardingPage(
             symbol: "key.horizontal.fill",
             tint: .blue,
+            useAppIcon: true,
             title: "Welcome to EnvHub",
             subtitle: "Every .env file on your machine, in one window."
         ) {
@@ -248,6 +249,7 @@ struct OnboardingView: View {
 private struct OnboardingPage<Content: View>: View {
     let symbol: String
     let tint: Color
+    var useAppIcon = false
     let title: String
     let subtitle: String
     @ViewBuilder let content: Content
@@ -255,14 +257,24 @@ private struct OnboardingPage<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             VStack(alignment: .leading, spacing: 14) {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(tint.gradient)
-                    .frame(width: 64, height: 64)
-                    .overlay {
-                        Image(systemName: symbol)
-                            .font(.system(size: 30, weight: .medium))
-                            .foregroundStyle(.white)
-                    }
+                if useAppIcon {
+                    // The real app icon (asset catalog) — its bitmap includes the
+                    // squircle margins, so draw at 78pt inside a 64pt layout box.
+                    Image(nsImage: .envHubIcon)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 78, height: 78)
+                        .padding(-7)
+                } else {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(tint.gradient)
+                        .frame(width: 64, height: 64)
+                        .overlay {
+                            Image(systemName: symbol)
+                                .font(.system(size: 30, weight: .medium))
+                                .foregroundStyle(.white)
+                        }
+                }
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title).font(.largeTitle.bold())
                     Text(subtitle).font(.title3).foregroundStyle(.secondary)

@@ -21,14 +21,9 @@
     mask-image: linear-gradient(120deg, transparent, black 60%);
     -webkit-mask-image: linear-gradient(120deg, transparent, black 60%);
   }
-  .tile {
-    width: 168px; height: 168px; flex: 0 0 168px; border-radius: 40px; position: relative; z-index: 2;
-    background: linear-gradient(155deg, #4A8CFF 0%, #2F6BF0 42%, #3A4ED8 100%);
-    box-shadow: 0 24px 60px rgba(30,60,160,0.5), inset 0 2px 0 rgba(255,255,255,0.35);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .tile::before { content:""; position:absolute; inset:0; border-radius:40px;
-    background: radial-gradient(120% 90% at 22% 12%, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%); }
+  /* the real app icon — its bitmap includes the squircle margins and shadow */
+  .appicon { width: 205px; flex: 0 0 205px; position: relative; z-index: 2; margin: 0 -12px; }
+  .appicon img { width: 100%; display: block; }
   .content { position: relative; z-index: 2; }
   .name { font-size: 84px; font-weight: 800; letter-spacing: -2px; color: #fff; line-height: 1; }
   .name .accent { color: #6FA8FF; }
@@ -43,16 +38,8 @@
 </head>
 <body>
   <div class="banner">
-    <div class="tile">
-      <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
-        <g fill="#ffffff">
-          <circle cx="30" cy="50" r="20"/>
-          <rect x="46" y="44.5" width="40" height="11" rx="3.2"/>
-          <rect x="70" y="55.5" width="6" height="12" rx="2"/>
-          <rect x="82" y="55.5" width="6" height="16" rx="2"/>
-        </g>
-        <circle cx="30" cy="50" r="7.5" fill="#2F6BF0"/>
-      </svg>
+    <div class="appicon">
+      <img src="../../EnvHub/EnvHub/Assets.xcassets/AppIcon.appiconset/icon_512.png" alt="EnvHub icon">
     </div>
     <div class="content">
       <div class="name">Env<span class="accent">Hub</span></div>

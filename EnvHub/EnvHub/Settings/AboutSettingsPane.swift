@@ -15,14 +15,13 @@ struct AboutSettingsPane: View {
         Form {
             Section {
                 HStack(spacing: 14) {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(.blue.gradient)
-                        .frame(width: 56, height: 56)
-                        .overlay {
-                            Image(systemName: "key.horizontal.fill")
-                                .font(.system(size: 26, weight: .medium))
-                                .foregroundStyle(.white)
-                        }
+                    // The real app icon — bitmap includes squircle margins, so
+                    // draw at 68pt inside a 56pt layout box.
+                    Image(nsImage: .envHubIcon)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 68, height: 68)
+                        .padding(-6)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("EnvHub").font(.title2.bold())
                         Text("Version \(Core.version)").font(.callout).foregroundStyle(.secondary)

@@ -50,14 +50,13 @@ struct AboutWindowView: View {
 
     private var header: some View {
         HStack(spacing: 16) {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.blue.gradient)
-                .frame(width: 64, height: 64)
-                .overlay {
-                    Image(systemName: "key.horizontal.fill")
-                        .font(.system(size: 30, weight: .medium))
-                        .foregroundStyle(.white)
-                }
+            // The real app icon — bitmap includes squircle margins, so draw at
+            // 78pt inside a 64pt layout box.
+            Image(nsImage: .envHubIcon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 78, height: 78)
+                .padding(-7)
             VStack(alignment: .leading, spacing: 3) {
                 Text("EnvHub").font(.largeTitle.bold())
                 Text("Version \(Core.version)").font(.callout).foregroundStyle(.secondary)
