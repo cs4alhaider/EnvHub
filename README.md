@@ -141,11 +141,11 @@ open EnvHub/EnvHub.xcodeproj
 # …or: xcodebuild -project EnvHub/EnvHub.xcodeproj -scheme EnvHub -destination 'platform=macOS' build
 
 # CLI
-swift run --package-path cli envhub --help
-swift build -c release --package-path cli   # optimized CLI build (scrypt is much faster)
+swift run --package-path EnvHubCLI envhub --help
+swift build -c release --package-path EnvHubCLI   # optimized CLI build (scrypt is much faster)
 
 # Tests
-swift test                        # 87 UI-free tests across all modules
+swift test --package-path EnvHubKit   # 100 UI-free tests across all modules
 ```
 
 ## CLI reference
@@ -187,8 +187,9 @@ envhub store
 cp "$(envhub store)" ~/envhub-backup.store
 ```
 
-The app and CLI share one store at `~/Library/Application Support/EnvHub/EnvHub.store`;
-set `ENVHUB_STORE=<path>` to point either at a different one.
+The app and CLI share one store in the `group.net.alhaider.EnvHub` app-group container
+(`envhub store` prints the exact path); set `ENVHUB_STORE=<path>` to point either at a
+different one.
 
 ### For AI agents
 
@@ -199,23 +200,24 @@ semantics). Drop the folder into your agent's skills directory — e.g.
 
 ## Architecture
 
-One SwiftPM package (`EnvHubKit`) at the repo root holds **all** UI-free logic, the CLI,
-and the tests. A thin SwiftUI app links it via a local package reference and consumes the
-`Core` and `Helper` products.
+One SwiftPM package (`EnvHubKit/`) holds **all** UI-free logic and the tests. A thin
+SwiftUI app links it via a local package reference and consumes the `Core` and `Helper`
+products; the `envhub` CLI is its own small package at `EnvHubCLI/`, built on `Core`.
 
 ```
-Package.swift                 EnvHubKit — libraries + CLI + tests
-Sources/
-  Model/        pure Sendable value types (EnvDocument, EnvKind + catalog, diff, …)
-  Parser/       .env read/write — comment-preserving, byte-stable          → Model
-  Scanner/      parallel, cancellable filesystem discovery                 → Model
-  Classifier/   ordered regex rules → environment                          → Model
-  Crypto/       AES-256-GCM + in-house scrypt (RFC 7914), .envenc          → Model
-  Core/         facade + services + shared SwiftData store (app & CLI)
-  Helper/       SwiftUI @Environment injection of Core services            → Core
-  envhub/       CLI — one file per subcommand                              → Core
-Tests/          Swift Testing suites per module (UI-free)
+EnvHubKit/                    the Swift package — libraries + tests
+  Package.swift
+  Sources/
+    Model/      pure Sendable value types (EnvDocument, EnvKind + catalog, diff, …)
+    Parser/     .env read/write — comment-preserving, byte-stable          → Model
+    Scanner/    parallel, cancellable filesystem discovery                 → Model
+    Classifier/ ordered regex rules → environment                          → Model
+    Crypto/     AES-256-GCM + in-house scrypt (RFC 7914), .envenc          → Model
+    Core/       facade + services + shared SwiftData store (app & CLI)
+    Helper/     SwiftUI @Environment injection of Core services            → Core
+  Tests/        Swift Testing suites per module (UI-free)
 EnvHub/         SwiftUI macOS app (links Core + Helper)
+EnvHubCLI/      envhub CLI package — one file per subcommand               → Core
 ```
 
 **Design principles**
@@ -282,8 +284,8 @@ tag appended to the ciphertext.
 
 Issues and pull requests are genuinely welcome — bugs, ideas, or an environment type EnvHub
 doesn't have yet. See [CONTRIBUTING.md](CONTRIBUTING.md); the short version: business logic
-goes in the Swift package with tests, the app stays a thin SwiftUI layer, and `swift test`
-+ `xcodebuild` must pass.
+goes in the Swift package with tests, the app stays a thin SwiftUI layer, and
+`swift test --package-path EnvHubKit` + `xcodebuild` must pass.
 
 ## Author
 

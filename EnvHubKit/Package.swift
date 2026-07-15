@@ -4,8 +4,8 @@ import PackageDescription
 // EnvHubKit — all UI-free logic (Model/Parser/Scanner/Classifier/Crypto/Core)
 // and the SwiftUI dependency-injection glue (Helper).
 // The macOS app (EnvHub/EnvHub.xcodeproj) links this package via a relative
-// local-package reference (../) and consumes the `Core` and `Helper` products.
-// The `envhub` CLI lives in its own package at `cli/` and consumes `Core` the
+// local-package reference (../EnvHubKit) and consumes the `Core` and `Helper` products.
+// The `envhub` CLI lives in its own package at `EnvHubCLI/` and consumes `Core` the
 // same way, so app and CLI share one store schema and move in lockstep.
 //
 // Dependency rules (kept clean on purpose):

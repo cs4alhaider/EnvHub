@@ -62,10 +62,10 @@ rm -rf "$BUILD" "$DIST"; mkdir -p "$BUILD" "$DIST"
 
 echo "▸ EnvHub $VERSION  ·  team $TEAM_ID  ·  identity: $SIGN_IDENTITY"
 
-# ---- 1. Build the CLI (its own package at cli/) --------------------------------
+# ---- 1. Build the CLI (its own package at EnvHubCLI/) --------------------------------
 echo "▸ Building the envhub CLI (release)…"
-swift build -c release --product envhub --package-path "$ROOT/cli"
-CLI_BIN="$ROOT/cli/.build/release/envhub"
+swift build -c release --product envhub --package-path "$ROOT/EnvHubCLI"
+CLI_BIN="$ROOT/EnvHubCLI/.build/release/envhub"
 
 # ---- 2. Archive the app ------------------------------------------------------
 echo "▸ Archiving the app…"

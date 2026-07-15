@@ -16,7 +16,7 @@ APP=$(ls -dt ~/Library/Developer/Xcode/DerivedData/EnvHub-*/Build/Products/Debug
 codesign --force --deep -s - "$APP"
 ```
 
-`swift test` covers the package; it is NOT app verification.
+`swift test --package-path EnvHubKit` covers the package; it is NOT app verification.
 
 ## Isolated store (never touch the real library)
 
