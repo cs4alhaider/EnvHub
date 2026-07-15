@@ -41,7 +41,9 @@ function Act({
           <h2>{title}</h2>
           <p className="lede">{lede}</p>
           <ul style={{ '--accent': accent } as CSSProperties}>
-            {bullets.map((b, i) => <li key={i}>{b}</li>)}
+            {/* Wrap each bullet in one span: in a flex row the <b> label would
+                otherwise become its own flex item and wrap in a narrow column. */}
+            {bullets.map((b, i) => <li key={i}><span>{b}</span></li>)}
           </ul>
         </Reveal>
         <Reveal delay={1}>{children}</Reveal>
