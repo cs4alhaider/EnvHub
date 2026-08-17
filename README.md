@@ -3,6 +3,7 @@
 </p>
 
 <p align="center">
+  <a href="https://apps.apple.com/app/id6788664509"><img src="https://img.shields.io/badge/Mac%20App%20Store-available-0A84FF?logo=apple&logoColor=white" alt="Available on the Mac App Store"></a>
   <img src="https://img.shields.io/badge/macOS-26%20Tahoe-black?logo=apple&logoColor=white" alt="macOS 26">
   <img src="https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white" alt="Swift 6">
   <img src="https://img.shields.io/badge/SwiftUI-native-2F6BF0" alt="SwiftUI">
@@ -20,7 +21,7 @@
     <img src="docs/branding/mac-app-store-badge.svg" alt="Download on the Mac App Store" height="56">
   </a>
   <br>
-  <sub>Currently in App Review — releasing soon. The CLI is on Homebrew today.</sub>
+  <sub>Free on the Mac App Store · requires macOS 26 (Tahoe). Prefer the terminal? The CLI is on Homebrew.</sub>
 </p>
 
 ---
@@ -50,7 +51,7 @@ your Mac.
 
 ## Install
 
-**The app** — Mac App Store only:
+**The app** — free on the Mac App Store:
 
 <a href="https://apps.apple.com/app/id6788664509">
   <img src="docs/branding/mac-app-store-badge.svg" alt="Download on the Mac App Store" height="52">
