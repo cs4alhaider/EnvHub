@@ -17,9 +17,6 @@ github.com/cs4alhaider/homebrew-tap
 └── Formula/envhub.rb      ← template: docs/distribution/envhub.rb
 ```
 
-(The old `Casks/envhub-app.rb` is retired — remove it from the tap; the app is
-App Store-only.)
-
 ## 2. Release flow (per version)
 
 1. Bump `Core.version`, tag `vX.Y.Z`, push the tag; create a GitHub Release.

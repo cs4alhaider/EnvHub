@@ -74,7 +74,7 @@ export default function Landing() {
                 <img src={badge} alt="Download on the Mac App Store" />
               </a>
               <code className="brew"><span className="dollar">$</span> brew install cs4alhaider/tap/envhub</code>
-              <span className="note">App in review — releasing soon · CLI on Homebrew today · macOS 26+</span>
+              <span className="note">Now on the Mac App Store — free · CLI on Homebrew · macOS 26+</span>
             </div>
           </Reveal>
           <Reveal delay={3}>
