@@ -10,10 +10,9 @@
 >   Untagged = both.
 > - **Shipped: EnvHub 1.0.0 is live on the Mac App Store** (id 6788664509) —
 >   free, Developer Tools, macOS 26.0+. Write all copy in the present tense.
-> - **2026-07-15 distribution decision: the app ships ONLY on the Mac App Store**
->   (the Homebrew app cask is retired). `[DevID]` now means
->   "source-build only — NOT in any distributed app; do NOT feature on the
->   website." The CLI still ships via Homebrew.
+> - **2026-07-15 distribution decision: the app ships ONLY on the Mac App Store.**
+>   `[DevID]` now means "source-build only — NOT in any distributed app; do NOT
+>   feature on the website." The CLI still ships via Homebrew.
 > - `⌘…` = keyboard shortcut · `CLI:` = envhub command equivalent.
 > - `shot:` = existing screenshot asset to reuse (`appstore-kit/raw/…`,
 >   `docs/screenshots/…`) · `shot-needed:` = capture later for the zoomed section.
@@ -370,8 +369,6 @@
   README copy must speak in the present tense — no "coming soon" / "in review"
   language anywhere.
 - The app and CLI share one library (App Group container) — installing both just works.
-- The Homebrew **app cask is retired** (2026-07-15); the Developer ID release
-  pipeline was removed from the repo.
 - Git-leak guard and the bundled-CLI installer exist only in unsandboxed source
   builds → **not part of the product story on the website**.
 
